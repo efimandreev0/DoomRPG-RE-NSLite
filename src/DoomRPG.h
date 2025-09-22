@@ -3,7 +3,10 @@
 
 #ifndef __BYTEBOOL__
 #define __BYTEBOOL__
-typedef enum { false, true } boolean;
+#include <switch/types.h>
+#include <switch/runtime/pad.h>
+
+typedef enum { false_f, true_t } boolean;
 typedef unsigned char byte;
 #endif
 
@@ -270,7 +273,13 @@ unsigned int DoomRPG_GetTimeMS(void);
 unsigned int DoomRPG_GetUpTimeMS(void);
 int DoomRPG_freeMemory(void);
 
-int DoomRPG_getEventKey(int mouse_Button, const Uint8* state);
+int DoomRPG_getEventKey(int mouse_Button,
+#ifdef __aarch64__
+PadState pad
+#else
+const Uint8* state
+#endif
+);
 void DoomRPG_setDefaultBinds(DoomRPG_t* doomrpg);
 void DoomRPG_setBind(DoomRPG_t* doomrpg, int mouse_Button, const Uint8* state);
 

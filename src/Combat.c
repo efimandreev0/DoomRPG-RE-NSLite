@@ -4,6 +4,9 @@
 #include "DoomRPG.h"
 #include "DoomCanvas.h"
 #include "Combat.h"
+
+#include <switch/services/set.h>
+
 #include "CombatEntity.h"
 #include "Entity.h"
 #include "EntityDef.h"
@@ -525,7 +528,15 @@ int Combat_monsterSeq(Combat_t* combat)
 			combat->f342d = 0;
 			combat->gotCrit = false;
 			msgBuff = Hud_getMessageBuffer(hud);
-			SDL_snprintf(msgBuff, MS_PER_CHAR, (combat->attackerWeaponId == 18) ? "%s casts raise%c" : "%s attacks%c", combat->curAttacker->def->name, 0x7f);
+			u64 LanguageCode=0;
+			setInitialize();
+			setGetSystemLanguage(&LanguageCode);
+			if (strstr((char*)&LanguageCode, "ru")) {
+				SDL_snprintf(msgBuff, MS_PER_CHAR, (combat->attackerWeaponId == 18) ? "%s заклинает%c" : "%s атакует%c", combat->curAttacker->def->name, 0x7f);
+			}
+			else {
+				SDL_snprintf(msgBuff, MS_PER_CHAR, (combat->attackerWeaponId == 18) ? "%s casts raise%c" : "%s attacks%c", combat->curAttacker->def->name, 0x7f);
+			}
 			Hud_finishMessageBuffer(hud);
 			break;
 		case 1:
@@ -629,7 +640,15 @@ int Combat_monsterSeq(Combat_t* combat)
 
 			if (combat->curTarget == NULL) {
 				if (combat->totalDamage + combat->totalArmorDamage == 0) {
-					Hud_addMessage(hud, "Dodged!");
+					u64 LanguageCode=0;
+					setInitialize();
+					setGetSystemLanguage(&LanguageCode);
+					if (strstr((char*)&LanguageCode, "ru")) {
+						Hud_addMessage(hud, "Отражено!");
+					}
+					else {
+						Hud_addMessage(hud, "Dodged!");
+					}
 				}
 				else {
 					Player_pain(player, combat->totalDamage, combat->totalArmorDamage);
@@ -648,13 +667,29 @@ int Combat_monsterSeq(Combat_t* combat)
 					Game_linkEntity(combat->doomRpg->game, combat->curTarget, combat->curTarget->linkIndex % 32, combat->curTarget->linkIndex / 32);
 					
 					msgBuff = Hud_getMessageBuffer(hud);
-					SDL_snprintf(msgBuff, MS_PER_CHAR, "%s is revived!", combat->curTarget->def->name);
+					u64 LanguageCode=0;
+					setInitialize();
+					setGetSystemLanguage(&LanguageCode);
+					if (strstr((char*)&LanguageCode, "ru")) {
+						SDL_snprintf(msgBuff, MS_PER_CHAR, "%s оживлён!", combat->curTarget->def->name);
+					}
+					else {
+						SDL_snprintf(msgBuff, MS_PER_CHAR, "%s is revived!", combat->curTarget->def->name);
+					}
 					Hud_finishMessageBuffer(hud);
 
 					DoomCanvas_checkFacingEntity(doomCanvas);
 				}
 				else {
-					Hud_addMessage(hud, "Raise failed!");
+					u64 LanguageCode=0;
+					setInitialize();
+					setGetSystemLanguage(&LanguageCode);
+					if (strstr((char*)&LanguageCode, "ru")) {
+						Hud_addMessage(hud, "Оживление не удалось!");
+					}
+					else {
+						Hud_addMessage(hud, "Raise failed!");
+					}
 				}
 			}
 			else {
@@ -729,8 +764,367 @@ boolean Combat_playerSeq(Combat_t* combat)
 	doomCanvas = combat->doomRpg->doomCanvas;
 	player = combat->doomRpg->player;
 	hud = combat->doomRpg->hud;
+	u64 LanguageCode=0;
+	setInitialize();
+	setGetSystemLanguage(&LanguageCode);
+	if (strstr((char*)&LanguageCode, "ru")) {
+		if (combat->stage == 0) {
+		combat->f336b = false;
+		combat->f340c = false;
+		combat->stage = 1;
+		combat->animEndTime = doomCanvas->time + 250;
+		combat->frameTime = 0;
+		combat->totalDamage = 0;
+		combat->totalArmorDamage = 0;
+		combat->hitType = 0;
+		combat->f342d = 0;
+		combat->gotCrit = false;
+		combat->numActiveMissiles = 0;
+		combat->endFrameTime = 0;
+		combat->kronosTeleporter = 0;
 
-	if (combat->stage == 0) {
+		if (!doomCanvas->slowBlit) {
+			DoomCanvas_updateViewTrue(doomCanvas);
+		}
+
+		Combat_worldDistToTileDist(combat);
+
+		wpn = &combat->weaponInfo[combat->attackerWeaponId];
+		if (combat->curTarget->def->eType == 1) {
+
+			msgBuff = Hud_getMessageBuffer(hud);
+			if (wpn->ammoUsage) {
+				byte b = player->ammo[wpn->ammoType];
+				if (b < wpn->ammoUsage) {
+					SDL_snprintf(msgBuff, MS_PER_CHAR, "Атака%c %s", 0x7f, "(Последний выстрел!)");
+				}
+				else if (b < wpn->ammoUsage * 2) {
+					SDL_snprintf(msgBuff, MS_PER_CHAR, "Атака%c %s", 0x7f, "(Остался последний выстрел!)");
+				}
+				else if (b < wpn->ammoUsage * 3) {
+					SDL_snprintf(msgBuff, MS_PER_CHAR, "Атака%c %s", 0x7f, "(Осталось 2 выстрела!)");
+				}
+				else if (b < wpn->ammoUsage * 4) {
+					SDL_snprintf(msgBuff, MS_PER_CHAR, "Атака%c %s", 0x7f, "(Осталось 3 выстрела!)");
+				}
+			}
+			Hud_finishMessageBuffer(hud);
+
+			if (combat->curTarget->def->eSubType == 6 && combat->curTarget->def->parm == 467) {
+				combat->bloodColor = 0x0000BB;
+			}
+			else if (combat->curTarget->def->eSubType == 11 && combat->curTarget->def->parm == 467) {
+				combat->bloodColor = 0x00C000;
+			}
+			else {
+				combat->bloodColor = 0xBB0000;
+			}
+		}
+		else if (wpn->ammoUsage) {
+			byte b = player->ammo[wpn->ammoType];
+			if (b < wpn->ammoUsage) {
+				Hud_addMessage(hud, "Последний выстрел!");
+			}
+			else if (b < wpn->ammoUsage * 2) {
+				Hud_addMessage(hud, "Остался 1 выстрел!");
+			}
+			else if (b < wpn->ammoUsage * 3) {
+				Hud_addMessage(hud, "Осталось 2 выстрела!");
+			}
+			else if (b < wpn->ammoUsage * 4) {
+				Hud_addMessage(hud, "Осталось 3 выстрела!");
+			}
+		}
+	}
+	else if (combat->stage == 1) {
+
+		if (combat->nextStageTime != 0) {
+			if (doomCanvas->time > combat->animEndTime) {
+				if (combat->f336b) {
+					if (!doomCanvas->slowBlit) {
+						DoomCanvas_updateViewTrue(doomCanvas);
+					}
+					combat->f336b = false;
+				}
+				if (doomCanvas->time > combat->nextStageTime) {
+					combat->stage = 2; // combat->nextStage;
+					combat->nextStageTime = 0;
+				}
+			}
+			return false;
+		}
+
+		if (combat->frameTime == 0) {
+
+			if (doomCanvas->time <= combat->animEndTime) {
+				Combat_updateProjectile(combat);
+				return false;
+			}
+
+			if (combat->animLoopCount <= 0 && !combat->f336b) {
+				Combat_updateProjectile(combat);
+				return false;
+			}
+
+			combat->f336b = !combat->f336b;
+
+			if (!doomCanvas->slowBlit || (combat->f336b && (combat->animLoopCount == wpinfo[(combat->attackerWeaponId * 6) + 0]))) {
+				DoomCanvas_updateViewTrue(doomCanvas);
+			}
+
+			if (combat->f336b) {
+				combat->frameTime = doomCanvas->time + 150;
+				combat->endFrameTime = doomCanvas->time + (10 * wpinfo[(combat->attackerWeaponId * 6) + 1]);
+				combat->armorDamage = 0;
+				combat->damage = 0;
+
+				int n = (player->berserkerTics != 0) ? 768 : 256;
+				if (combat->curTarget->def->eType == 1) { // Enemy
+					combat->hitType = CombatEntity_calcHit(combat->doomRpg, &player->ce, &combat->weaponInfo[combat->attackerWeaponId], &combat->curTarget->monster->ce, combat->worldDist);
+
+					if (combat->hitType != 0) {
+						if (combat->hitType == 2 && combat->animLoopCount == wpinfo[combat->attackerWeaponId * 6 + 0]) {
+							combat->gotCrit = true;
+						}
+
+						CombatEntity_calcDamage(combat->doomRpg, &player->ce,
+							&combat->weaponInfo[combat->attackerWeaponId],
+							&combat->curTarget->monster->ce, combat->gotCrit ? (n * 512 >> 8) : n, combat->worldDist,
+							&combat->damage, &combat->armorDamage);
+
+						armor = CombatEntity_getArmor(&combat->curTarget->monster->ce);
+						dmgArmor = combat->damage;
+						if (combat->armorDamage > armor) {
+							dmgArmor += (combat->armorDamage - armor);
+						}
+
+						if (CombatEntity_getHealth(&combat->curTarget->monster->ce) - dmgArmor > 0) {
+							sprite = &combat->doomRpg->render->mapSprites[(combat->curTarget->info & 0xFFFF) - 1];
+							sprite->info = sprite->info & 0xffffe1ffU | 0xc00;
+							combat->curTarget->monster->animFrameTime = doomCanvas->time + 250;
+						}
+
+						if (combat->curTarget->def->eSubType == 13) {// Kronos
+							if (combat->kronosTeleporterDest == false) {
+								combat->kronosTeleporter = 1;
+							}
+						}
+					}
+
+					if (combat->curTarget->def->eSubType == 13) { // Kronos
+						if (combat->hitType &&
+							combat->animLoopCount == wpinfo[(combat->attackerWeaponId * 6) + 0] &&
+							(combat->kronosTeleporter || DoomRPG_randNextByte(&combat->doomRpg->random) < 96))
+						{
+							SDL_memmove(teleportDestXYtmp, teleportDestXY, sizeof(teleportDestXY));
+
+							teleportOrder[0] = 0;
+							teleportOrder[1] = 1;
+							teleportOrder[2] = 2;
+							teleportOrder[3] = 3;
+							for (i = 0; i < 4; ++i)
+							{
+								indx1 = DoomRPG_randNextByte(&combat->doomRpg->random) & 3;
+								indx2 = DoomRPG_randNextByte(&combat->doomRpg->random) & 3;
+								if (indx1 != indx2)
+								{
+									tmp = teleportOrder[indx2];
+									teleportOrder[indx2] = teleportOrder[indx1];
+									teleportOrder[indx1] = tmp;
+								}
+							}
+
+							viewX = doomCanvas->viewX;
+							viewY = doomCanvas->viewY;
+							sprite = &combat->doomRpg->render->mapSprites[(combat->curTarget->info & 0xFFFF) - 1];
+
+							i = 0;
+							do {
+
+								x = viewX + (teleportDestXYtmp[teleportOrder[i] * 2 + 0] << 6);
+								y = viewY + (teleportDestXYtmp[teleportOrder[i] * 2 + 1] << 6);
+								if (Game_findMapEntityXYFlag(combat->doomRpg->game, x, y, 0xF387) == NULL) {
+									Game_gsprite_allocAnim(combat->doomRpg->game, 2, sprite->x, sprite->y);
+									Game_unlinkEntity(combat->doomRpg->game, sprite->ent);
+									sprite->ent->monster->x = sprite->x = x;
+									sprite->ent->monster->y = sprite->y = y;
+									Game_linkEntity(combat->doomRpg->game, sprite->ent, x >> 6, y >> 6);
+									Render_relinkSprite(combat->doomRpg->render, sprite);
+									combat->kronosTeleporter = true;
+									combat->kronosTeleporterDest = true;
+									combat->hitType = 0;
+									combat->armorDamage = 0;
+									combat->damage = 0;
+									combat->gotCrit = false;
+									break;
+								}
+
+							} while (++i < 4);
+						}
+
+						printf("KT: %d KTD: %d\n", combat->kronosTeleporter, combat->kronosTeleporterDest);
+					}
+				}
+				else {
+					combat->hitType = Combat_calcHit(combat, combat->curTarget, combat->worldDist);
+					if (combat->curTarget->def->eSubType == 4) {
+						CombatEntity_calcDamage(combat->doomRpg, &player->ce,
+							&combat->weaponInfo[combat->attackerWeaponId],
+							&combat->bMobj, combat->gotCrit ? (n * 512 >> 8) : n, combat->worldDist,
+							&combat->damage, &combat->armorDamage);
+					}
+					else {
+						CombatEntity_setDefense(&combat->aMobj, (CombatEntity_getStrength(&combat->doomRpg->player->ce) << 8) * 176 >> 16);
+
+						CombatEntity_calcDamage(combat->doomRpg, &player->ce,
+							&combat->weaponInfo[combat->attackerWeaponId],
+							&combat->aMobj, combat->gotCrit ? (n * 512 >> 8) : n, combat->worldDist,
+							&combat->damage, &combat->armorDamage);
+					}
+				}
+				combat->totalDamage += combat->damage;
+				combat->totalArmorDamage += combat->armorDamage;
+				--combat->animLoopCount;
+
+				combat->animEndTime = doomCanvas->time + (10 * wpinfo[(combat->attackerWeaponId * 6) + 1]);
+			}
+			else {
+				combat->animEndTime = doomCanvas->time + (5 * wpinfo[(combat->attackerWeaponId * 6) + 1]);
+			}
+		}
+
+		if (combat->frameTime != 0 && doomCanvas->time > combat->frameTime) {
+
+			if (combat->attackerWeaponId == 8) {
+				snd = 5052;
+			}
+			else if ((combat->attackerWeaponId == 0) && (combat->curTarget->def->eType == 1))
+			{
+				snd = 5136;
+			}
+			else {
+				snd = (combat->attackerWeaponId + 5044);
+			}
+			Sound_playSound(combat->doomRpg->sound, snd, 0, 5);
+
+
+			if (combat->kronosTeleporter == 0) {
+				Combat_launchProjectile(combat);
+			}
+
+			if (combat->attackerWeaponId == 4 && combat->f340c && combat->curTarget->def->eType == 1 && combat->animLoopCount == 0) {
+				Combat_spawnBloodParticles(combat, combat->tileDist, combat->bloodColor, -1);
+				sprite = &combat->doomRpg->render->mapSprites[(combat->curTarget->info & 0xFFFF) - 1];
+				sprite->info |= 0x10000;
+				DoomCanvas_updateViewTrue(doomCanvas);
+			}
+
+			combat->frameTime = 0;
+
+			Combat_updateProjectile(combat);
+			return false;
+		}
+		else {
+			Combat_updateProjectile(combat);
+			return false;
+		}
+	}
+	else if (combat->stage == 2) {
+		combat->f336b = false;
+		if (combat->nextStageTime == 0) {
+
+			DoomCanvas_updateViewTrue(doomCanvas);
+			if (combat->totalDamage + combat->totalArmorDamage == 0) {
+				if (combat->curTarget->def->eType == 1 && player->weapon != 1) {
+					if (combat->kronosTeleporter != 0) {
+						Hud_addMessage(hud, "Кронос телепортировался!");
+					}
+					else {
+						Hud_addMessage(hud, "Не попал!");
+					}
+				}
+				else {
+					Hud_addMessage(hud, "Нет эффекта!");
+				}
+			}
+			else {
+				if (combat->curTarget->def->eType == 1) {
+					msgBuff = Hud_getMessageBuffer(hud);
+					SDL_snprintf(msgBuff, MS_PER_CHAR, "%s%d урон(-а)!", combat->gotCrit ? "Критический! " : "", combat->totalDamage + combat->totalArmorDamage);
+
+					Entity_pain(combat->curTarget, combat->totalDamage, combat->totalArmorDamage);
+
+					if (CombatEntity_getHealth(&combat->curTarget->monster->ce) <= 0) {
+						msgLen = SDL_strlen(msgBuff);
+						SDL_snprintf(msgBuff + msgLen, MS_PER_CHAR - msgLen, " %s умер!", combat->curTarget->def->name);
+						Hud_finishMessageBuffer(hud);
+						Entity_died(combat->curTarget);
+					}
+					else {
+						Hud_finishMessageBuffer(hud);
+
+						// Pain Sound
+						snd = EntityMonster_getSoundRnd(combat->curTarget->monster, 6);
+						if (snd != 0) {
+							Sound_playSound(combat->doomRpg->sound, snd, 0, 2);
+						}
+					}
+				}
+				else if (combat->hitType != 0) {
+					if (combat->curTarget->def->eSubType == 4) {
+						msgBuff = Hud_getMessageBuffer(hud);
+						int n3 = ((combat->curTarget->info & 0x400000) != 0x0) ? 1 : 0;
+
+						if (combat->doomRpg->game->powerCouplingHealth[n3] > combat->totalDamage + combat->totalArmorDamage) {
+							SDL_snprintf(msgBuff, MS_PER_CHAR, "По %s нанесено %d урона!", combat->curTarget->def->name, combat->totalDamage + combat->totalArmorDamage);
+						}
+						else {
+							SDL_snprintf(msgBuff, MS_PER_CHAR, "%s уничтожен!", combat->curTarget->def->name);
+						}
+
+						Hud_finishMessageBuffer(hud);
+
+						combat->doomRpg->game->powerCouplingHealth[n3] -= combat->totalDamage + combat->totalArmorDamage;
+						if (combat->doomRpg->game->powerCouplingHealth[n3] <= 0) {
+							Entity_died(combat->curTarget);
+						}
+					}
+					else {
+						Entity_died(combat->curTarget);
+					}
+				}
+				else if (combat->attackerWeaponId == 1) {
+					Hud_addMessage(hud, "Нет эффекта!");
+				}
+				else {
+					Hud_addMessage(hud, "Не попал!");
+				}
+
+				if (combat->hitType != 0 && (combat->curTarget->info & 0x200000) == 0x0) {
+					sprite = &combat->doomRpg->render->mapSprites[(combat->curTarget->info & 0xFFFF) - 1];
+					if (combat->attackerWeaponId == 7) {
+						Game_radiusHurtEntities(combat->doomRpg->game, sprite->x, sprite->y, combat->totalDamage / 2, combat->totalArmorDamage / 2, false, combat->curAttacker == NULL);
+					}
+					else if (combat->attackerWeaponId == 8) {
+						Game_radiusHurtEntities(combat->doomRpg->game, sprite->x, sprite->y, combat->totalDamage / 2, combat->totalArmorDamage / 2, true, combat->curAttacker == NULL);
+					}
+				}
+			}
+			if (combat->curTarget->def->eType != 1 || CombatEntity_getHealth(&combat->curTarget->monster->ce) <= 0) {
+				combat->f339c = doomCanvas->time + 1000;
+				return true;
+			}
+			combat->nextStageTime = doomCanvas->time + 1000;
+		}
+		else if (doomCanvas->time > combat->nextStageTime) {
+			combat->nextStageTime = 0;
+			return true;
+		}
+	}
+
+	}
+	else {
+		if (combat->stage == 0) {
 		combat->f336b = false;
 		combat->f340c = false;
 		combat->stage = 1;
@@ -1025,7 +1419,7 @@ boolean Combat_playerSeq(Combat_t* combat)
 					else {
 						Hud_finishMessageBuffer(hud);
 
-						// Pain Sound 
+						// Pain Sound
 						snd = EntityMonster_getSoundRnd(combat->curTarget->monster, 6);
 						if (snd != 0) {
 							Sound_playSound(combat->doomRpg->sound, snd, 0, 2);
@@ -1084,6 +1478,7 @@ boolean Combat_playerSeq(Combat_t* combat)
 		}
 	}
 
+	}
 	return false;
 }
 

@@ -1,6 +1,7 @@
 #ifndef GAME_H__
 #define GAME_H__
-
+#include "DoomCanvas.h"
+#include "DoomRPG.h"
 #include "Render.h"
 #include "Entity.h"
 #include "EntityMonster.h"
@@ -201,7 +202,7 @@ void Game_loadConfig(Game_t* game);
 void Game_loadMapEntities(Game_t* game);
 void Game_loadPlayerState(Game_t* game, char* fileName);
 void Game_loadState(Game_t* game, int i);
-void Game_loadWorldState(Game_t* game);
+void Game_loadWorldState(Game_t* game, Render_t* render);
 void Game_monsterAI(Game_t* game);
 void Game_monsterLerp(Game_t* game);
 boolean Game_performDoorEvent(Game_t* game, int codeId, int arg1, int flags);

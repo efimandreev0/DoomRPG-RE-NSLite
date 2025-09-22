@@ -17,7 +17,14 @@
 
 #include "DoomRPG.h"
 #include "Z_Zip.h"
+#ifdef __aarch64__
+#include "logger.h"
+#include <string.h>
+#include <stdio.h>
+#include <dirent.h>
 
+#include <switch.h>
+#endif
 zip_file_t zipFile;
 
 static void* zip_alloc(void* ctx, unsigned int items, unsigned int size)
@@ -136,6 +143,57 @@ void closeZipFile(zip_file_t* zipFile)
 
 unsigned char* readZipFileEntry(const char* name, zip_file_t* zipFile, int* sizep)
 {
+#ifdef __aarch64__
+	(void)zipFile;
+	DIR* dir;
+	struct dirent* ent;
+
+	//dir = opendir("/switch/DoomRPG");
+	const char* base_path = "/switch/DoomRPG/";
+	char full_path[128];
+	snprintf(full_path, sizeof(full_path), "%s%s", base_path, name);
+	//logger_write("Patched to %s", full_path);
+	if (sizep != NULL) {
+		*sizep = 0;
+	}
+
+	SDL_RWops* rw = SDL_RWFromFile(full_path, "rb");
+	if (rw == NULL) {
+		//logger_write("Cannot open file!", full_path);
+		return NULL;
+	}
+
+	int current_pos = SDL_RWtell(rw);
+
+	Sint64 file_size = SDL_RWseek(rw, 0, SEEK_END);
+
+	SDL_RWseek(rw, current_pos, SEEK_SET);
+	if (file_size < 0) {
+		SDL_RWclose(rw);
+		return NULL;
+	}
+
+	unsigned char* buffer = (unsigned char*)SDL_malloc(file_size);
+	if (buffer == NULL) {
+		SDL_RWclose(rw);
+		return NULL;
+	}
+
+	size_t bytes_read = SDL_RWread(rw, buffer, 1, file_size);
+	if (bytes_read != (size_t)file_size) {
+		SDL_free(buffer);
+		SDL_RWclose(rw);
+		return NULL;
+	}
+
+	SDL_RWclose(rw);
+
+	if (sizep != NULL) {
+		*sizep = (int)file_size;
+	}
+	//logger_write("Opened file: %s", full_path);
+	return buffer;
+#else
 	zip_entry_t* entry = NULL;
 	int i, sig, general, method, namelength, extralength;
 	byte* cdata;
@@ -228,4 +286,5 @@ unsigned char* readZipFileEntry(const char* name, zip_file_t* zipFile, int* size
 	}
 
 	return NULL;
+#endif
 }

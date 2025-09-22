@@ -6,6 +6,9 @@
 #include "DoomRPG.h"
 #include "DoomCanvas.h"
 #include "Entity.h"
+
+#include <switch/services/set.h>
+
 #include "EntityDef.h"
 #include "Game.h"
 #include "Combat.h"
@@ -165,7 +168,180 @@ void Entity_died(Entity_t* entity)
 
         sprite = &entity->doomRpg->render->mapSprites[(entity->info & 0xFFFF) - 1];
 
-        switch (entity->def->eType) {
+        u64 LanguageCode=0;
+        setInitialize();
+        setGetSystemLanguage(&LanguageCode);
+        if (strstr((char*)&LanguageCode, "ru")) {
+            switch (entity->def->eType) {
+
+            case 1: // Enemy
+                Player_addXP(player, CombatEntity_getEXP(&entity->monster->ce));
+                sprite->info = (sprite->info & 0xffffe1ff) | 0x800;
+                sprite->ent->monster->animFrameTime = entity->doomRpg->doomCanvas->time + 250;
+
+                if (entity->info & 0x20000) {
+                    sprite->info |= 0x10000;
+                    Sound_playSound(entity->doomRpg->sound, 5091, 0, 3);
+                }
+                else {
+                    sprite->info |= 0x1000000;
+
+                    // Death Sound
+                    snd = EntityMonster_getSoundRnd(sprite->ent->monster, 8);
+                    if (snd != 0) {
+                        Sound_playSound(entity->doomRpg->sound, snd, 0, 5);
+                    }
+                    Entity_trimCorpsePile(entity, sprite->x, sprite->y);
+                }
+
+                Game_deactivate(entity->doomRpg->game, entity);
+                Game_unlinkEntity(entity->doomRpg->game, entity);
+                Entity_spawnDropItem(entity);
+
+                if ((entity->def->eSubType == 7) && !(entity->info & 0x10000000)) { // Beholder / Rahovart / Pain Elemental
+                    entity->info |= 0x10000000;
+                    sprTmp = &entity->doomRpg->render->mapSprites[(entity->info & 0xFFFF) + 0];
+                    if (Game_findMapEntityXYFlag(game, sprite->x, sprite->y, 0xFF87) == NULL) {
+                        sprTmp->info &= 0xfffeffff;
+                        sprTmp->ent->monster->x = sprTmp->x = sprite->x;
+                        sprTmp->ent->monster->y = sprTmp->y = sprite->y;
+                        Render_relinkSprite(entity->doomRpg->render, sprTmp);
+                        Game_linkEntity(game, sprTmp->ent, sprTmp->x >> 6, sprTmp->y >> 6);
+                    }
+                    else {
+                        sprTmp->ent->info |= 0x20000;
+                    }
+
+                    sprTmp = &entity->doomRpg->render->mapSprites[(entity->info & 0xFFFF) + 1];
+                    if ((Game_findMapEntityXYFlag(game, sprite->x - 64, sprite->y, 0xFF87) == NULL) && (sprite->x - 64 != doomCanvas->destX || sprite->y != doomCanvas->destY)) {
+                        sprTmp->x = sprite->x - 64;
+                        sprTmp->y = sprite->y;
+                    }
+                    else if ((Game_findMapEntityXYFlag(game, sprite->x + 64, sprite->y, 0xFF87) == NULL) && (sprite->x + 64 != doomCanvas->destX || sprite->y != doomCanvas->destY)) {
+                        sprTmp->x = sprite->x + 64;
+                        sprTmp->y = sprite->y;
+                    }
+                    else if ((Game_findMapEntityXYFlag(game, sprite->x, sprite->y - 64, 0xFF87) == NULL) && (sprite->x != doomCanvas->destX || sprite->y - 64 != doomCanvas->destY)) {
+                        sprTmp->x = sprite->x;
+                        sprTmp->y = sprite->y - 64;
+                    }
+                    else if ((Game_findMapEntityXYFlag(game, sprite->x, sprite->y + 64, 0xFF87) == NULL) && (sprite->x != doomCanvas->destX || sprite->y + 64 != doomCanvas->destY)) {
+                        sprTmp->x = sprite->x;
+                        sprTmp->y = sprite->y + 64;
+                    }
+                    else {
+                        sprTmp->ent->info |= 0x20000;
+                        break;
+                    }
+
+                    sprTmp->ent->monster->x = sprTmp->x;
+                    sprTmp->ent->monster->y = sprTmp->y;
+                    sprTmp->info &= 0xFFFEFFFF;
+                    Render_relinkSprite(entity->doomRpg->render, sprTmp);
+                    Game_linkEntity(game, sprTmp->ent, sprTmp->x >> 6, sprTmp->y >> 6);
+                }
+                else if (entity->def->eSubType == 12) { // Cyberdemon
+                    Game_executeTile(game, 0x480, 0x4c0, 0x100);
+                    if (sprite->info & 0x1000000) {
+                        sprite->info = sprite->info & 0xfeffffff | 0x10000;
+                        entity->info = entity->info | 0x20000;
+                        player->god = true;
+                        gSprite = Game_gsprite_allocAnim(game, 1, sprite->x + 16, sprite->y);
+                        gSprite->time += 33;
+                        gSprite = Game_gsprite_allocAnim(game, 1, sprite->x - 16, sprite->y);
+                        gSprite->time += 66;
+                        Game_gsprite_allocAnim(game, 1, sprite->x, sprite->y);
+                    }
+                }
+                else if (entity->def->eSubType == 8) { // Ghoul / Fiend / Revenant
+                    Game_gsprite_allocAnim(game, 1, sprite->x, sprite->y);
+                    if ((sprite->info & 0x1000000) != 0) {
+                        sprite->info = (sprite->info & 0xfeffffff) | 0x10000;
+                        entity->info |= 0x20000;
+                    }
+                }
+                else if (entity->def->eSubType == 13) { // Kronos
+                    Game_executeTile(game, 1984, 0, 0x100);
+                    sprite->info = (sprite->info & 0xfeffffff) | 0x10000;
+                    entity->info |= 0x20000;
+                }
+                break;
+
+            case 2: // Humans
+                Game_remove(game, entity);
+                break;
+
+            case 10: // Fire
+                gSprite = Game_gsprite_allocAnim(game, 13, sprite->x, sprite->y);
+                gSprite->flags |= 4;
+                gSprite->sprite->renderMode = 7;
+                Game_remove(game, entity);
+                Hud_addMessage(entity->doomRpg->hud, "Огонь потушен!");
+                Player_addXP(entity->doomRpg->player, 2);
+                break;
+
+            case 12: // Destructible Object
+                switch (entity->def->eSubType) {
+
+                    case 1: // Barrel
+                        Game_gsprite_allocAnim(game, 1, sprite->x, sprite->y);
+                        break;
+
+                    case 2: // Crate
+                        rnd = DoomRPG_randNextByte(&doomRpg->random);
+                        if (rnd < 2) {
+                            Game_gsprite_allocAnim(game, 1, sprite->x, sprite->y);
+                            Hud_addMessage(entity->doomRpg->hud, "В ловушке!");
+                            break;
+                        }
+                        else {
+                            if (rnd < 4) {
+                                entity->def = EntityDef_find(entity->doomRpg->entityDef, (byte)3, (byte)23);
+                            }
+                            else if (rnd < 12) {
+                                entity->def = EntityDef_find(entity->doomRpg->entityDef, (byte)3, (byte)22);
+                            }
+                            else if (rnd < 24) {
+                                entity->def = EntityDef_find(entity->doomRpg->entityDef, (byte)4, (byte)25);
+                            }
+                            else if (rnd < 150) {
+                                entity->def = EntityDef_find(entity->doomRpg->entityDef, (byte)3, (byte)21);
+                            }
+                            else {
+                                if (rnd >= 213) {
+                                    break;
+                                }
+                                entity->def = EntityDef_find(entity->doomRpg->entityDef, (byte)6, (byte)(DoomRPG_randNextByte(&entity->doomRpg->random) % 5));
+                            }
+
+                            entity->info |= 0x8000000;
+                            sprite->info = (sprite->info & -512) | entity->def->tileIndex;
+                            DoomCanvas_checkFacingEntity(entity->doomRpg->doomCanvas);
+                            return;
+                        }
+
+                    case 3: // Jammed Door / Weak Wall
+                        Hud_addMessage(doomRpg->hud, "Дверь открыта!");
+                        Player_addXP(entity->doomRpg->player, 1);
+                        break;
+
+                    case 4: // Power Coupling
+                        Game_gsprite_allocAnim(game, 1, sprite->x, sprite->y);
+                        ++game->powerCouplingDeaths;
+                        if (game->powerCouplingDeaths == 2) {
+                            ent = Entity_powerCouplingDied(entity->doomRpg->game);
+                            game->activePortal = false;
+                            Game_executeTile(game, (ent->linkIndex % 32) << 6, (ent->linkIndex / 32) << 6, 0x100);
+                        }
+                        break;
+                }
+                Game_remove(game, entity);
+                break;
+        }
+
+        }
+        else {
+            switch (entity->def->eType) {
 
             case 1: // Enemy
                 Player_addXP(player, CombatEntity_getEXP(&entity->monster->ce));
@@ -332,6 +508,7 @@ void Entity_died(Entity_t* entity)
                 break;
         }
 
+        }
         DoomCanvas_checkFacingEntity(entity->doomRpg->doomCanvas);
     }
 }
@@ -879,6 +1056,10 @@ void Entity_touched(Entity_t* entity)
 
     sound = 5060;
 
+    u64 LanguageCode=0;
+    setInitialize();
+    setGetSystemLanguage(&LanguageCode);
+    if (strstr((char*)&LanguageCode, "ru")) {
     switch (entity->def->eType)
     {
         case 3: {
@@ -887,7 +1068,7 @@ void Entity_touched(Entity_t* entity)
                 case 22:
                 case 23: {
                     if (!Player_addCredits(player, entity->def->parm)) {
-                        Hud_addMessage(hud, "Credits at maximum");
+                        Hud_addMessage(hud, "Максимальное количество кредитов!");
                         return;
                     }
                     Player_updateDamageFaceTime(player);
@@ -896,7 +1077,7 @@ void Entity_touched(Entity_t* entity)
 
                 case 21: {
                     if (CombatEntity_getArmor(&player->ce) >= CombatEntity_getMaxArmor(&player->ce)) {
-                        Hud_addMessage(hud, "Armor at maximum");
+                        Hud_addMessage(hud, "Максимальное количество брони!");
                         return;
                     }
                     Player_addArmor(player, entity->def->parm);
@@ -905,7 +1086,7 @@ void Entity_touched(Entity_t* entity)
 
                 case 20: {
                     if (CombatEntity_getHealth(&player->ce) >= CombatEntity_getMaxHealth(&player->ce)) {
-                        Hud_addMessage(hud, "Health at maximum");
+                        Hud_addMessage(hud, "Максимальное количество здоровья!");
                         return;
                     }
                     Player_addHealth(player, entity->def->parm);
@@ -923,7 +1104,7 @@ void Entity_touched(Entity_t* entity)
             hud->gotFaceTime = entity->doomRpg->doomCanvas->time + 500;
 
             msg = Hud_getMessageBuffer(hud);
-            SDL_snprintf(msg, MS_PER_CHAR, "Got %s", entity->def->name);
+            SDL_snprintf(msg, MS_PER_CHAR, "Получен(-о) %s", entity->def->name);
             Hud_finishMessageBuffer(hud);
             Game_remove(entity->doomRpg->game, entity);
             break;
@@ -932,7 +1113,7 @@ void Entity_touched(Entity_t* entity)
         case 4: {
             if (!Player_addItem(player, entity->def->eSubType, 1)) {
                 msg = Hud_getMessageBuffer(hud);
-                SDL_snprintf(msg, MS_PER_CHAR, "Can't hold more %ss", entity->def->name);
+                SDL_snprintf(msg, MS_PER_CHAR, "Не могу держать больше %ss", entity->def->name);
                 Hud_finishMessageBuffer(hud);
                 return;
             }
@@ -945,7 +1126,7 @@ void Entity_touched(Entity_t* entity)
 
             hud->gotFaceTime = entity->doomRpg->doomCanvas->time + 500;
             msg = Hud_getMessageBuffer(hud);
-            SDL_snprintf(msg, MS_PER_CHAR, "Got %s", entity->def->name);
+            SDL_snprintf(msg, MS_PER_CHAR, "Получено %s", entity->def->name);
             Hud_finishMessageBuffer(hud);
             Game_remove(entity->doomRpg->game, entity);
             break;
@@ -954,13 +1135,13 @@ void Entity_touched(Entity_t* entity)
         case 6:
         case 16: {
             if (!Player_addAmmo(player, entity->def->eSubType, entity->def->parm)) {
-                Hud_addMessage(hud, "Ammo at maximum");
+                Hud_addMessage(hud, "Максимальное количество патронов");
                 return;
             }
             Player_updateDamageFaceTime(player);
             hud->gotFaceTime = entity->doomRpg->doomCanvas->time + 500;
             msg = Hud_getMessageBuffer(hud);
-            SDL_snprintf(msg, MS_PER_CHAR, "Got %s", entity->def->name);
+            SDL_snprintf(msg, MS_PER_CHAR, "Получено %s", entity->def->name);
             Hud_finishMessageBuffer(hud);
 
             Sound_playSound(entity->doomRpg->sound, sound, 0, 3);
@@ -986,7 +1167,7 @@ void Entity_touched(Entity_t* entity)
             //Sound.playSound(1);
             hud->gotFaceTime = entity->doomRpg->doomCanvas->time + 500;
             msg = Hud_getMessageBuffer(hud);
-            SDL_snprintf(msg, MS_PER_CHAR, "Got %s", entity->def->name);
+            SDL_snprintf(msg, MS_PER_CHAR, "Получено %s", entity->def->name);
             Hud_finishMessageBuffer(hud);
             Game_remove(entity->doomRpg->game, entity);
 
@@ -994,35 +1175,35 @@ void Entity_touched(Entity_t* entity)
                 entity->doomRpg->game->tileEvent = 0;
 
                 if (entity->def->eSubType == 0) {
-                    DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "You got the Axe!|Zombies beware...", false);
+                    DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "Ты получил топор!|Берегитесь, зомби...", false);
                     sound = 5060;
                 }
                 else if (entity->def->eSubType == 1) {
-                    DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "You got the Fire|Extinguisher! It|uses halon can-|isters to put out|fires.", false);
+                    DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "Ты получил огне-|тушитель! Он ис-|пользует баллоны,|чтобы тушить|огонь.", false);
                     sound = 5060;
                 }
                 else if (entity->def->eSubType == 3) {
-                    DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "You got the|Shotgun!", false);
+                    DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "Ты получил|дробовик!", false);
                     sound = 5057;
                 }
                 else if (entity->def->eSubType == 4) {
-                    DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "You got the|Chaingun! Precise|and deadly, but|it's an ammo hog.", false);
+                    DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "Вы нашли|Пулемет!", false);
                     sound = 5057;
                 }
                 else if (entity->def->eSubType == 5) {
-                    DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "You got the Super|Shotgun! Fierce!", false);
+                    DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "Вы нашли|Супер Дробовик!", false);
                     sound = 5057;
                 }
                 else if (entity->def->eSubType == 7) {
-                    DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "You got the|Rocket Launcher!|w00t!", false);
+                    DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "Вы нашли|Ракетницу!", false);
                     sound = 5057;
                 }
                 else if (entity->def->eSubType == 6) {
-                    DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "You got the|Plasma Gun!", false);
+                    DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "Вы нашли|Плаз.пушку!", false);
                     sound = 5057;
                 }
                 else if (entity->def->eSubType == 8) {
-                    DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "You got the BFG!|We could tell you|what BFG stands|for, but this is|a family game.", false);
+                    DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "Вы нашли BFG!|Мы бы сказали|расшифровку, но|это семейная|игра", false);
                     sound = 5057;
                 }
 
@@ -1043,16 +1224,194 @@ void Entity_touched(Entity_t* entity)
         case 10: {
             Player_painEvent(player, NULL);
             Player_pain(player, 1, 2);
-            Hud_addMessage(hud, "It burns!");
+            Hud_addMessage(hud, "Жжётся!");
             break;
         }
 
         case 11: {
             Player_painEvent(player, NULL);
             Player_pain(player, 10, 10);
-            Hud_addMessage(hud, "It really burns!!");
+            Hud_addMessage(hud, "Сильно жжётся!!!");
             break;
         }
+    }
+    }
+    else {
+        switch (entity->def->eType)
+            {
+                case 3: {
+                    switch (entity->def->eSubType)
+                    {
+                        case 22:
+                        case 23: {
+                            if (!Player_addCredits(player, entity->def->parm)) {
+                                Hud_addMessage(hud, "Credits at maximum");
+                                return;
+                            }
+                            Player_updateDamageFaceTime(player);
+                            break;
+                        }
+
+                        case 21: {
+                            if (CombatEntity_getArmor(&player->ce) >= CombatEntity_getMaxArmor(&player->ce)) {
+                                Hud_addMessage(hud, "Armor at maximum");
+                                return;
+                            }
+                            Player_addArmor(player, entity->def->parm);
+                            break;
+                        }
+
+                        case 20: {
+                            if (CombatEntity_getHealth(&player->ce) >= CombatEntity_getMaxHealth(&player->ce)) {
+                                Hud_addMessage(hud, "Health at maximum");
+                                return;
+                            }
+                            Player_addHealth(player, entity->def->parm);
+                            break;
+                        }
+
+                        case 24: {
+                            player->keys |= 1 << entity->def->parm;
+                            Player_updateDamageFaceTime(player);
+                            break;
+                        }
+                    }
+
+                    Sound_playSound(entity->doomRpg->sound, sound, 0, 2);
+                    hud->gotFaceTime = entity->doomRpg->doomCanvas->time + 500;
+
+                    msg = Hud_getMessageBuffer(hud);
+                    SDL_snprintf(msg, MS_PER_CHAR, "Got %s", entity->def->name);
+                    Hud_finishMessageBuffer(hud);
+                    Game_remove(entity->doomRpg->game, entity);
+                    break;
+                }
+
+                case 4: {
+                    if (!Player_addItem(player, entity->def->eSubType, 1)) {
+                        msg = Hud_getMessageBuffer(hud);
+                        SDL_snprintf(msg, MS_PER_CHAR, "Can't hold more %ss", entity->def->name);
+                        Hud_finishMessageBuffer(hud);
+                        return;
+                    }
+                    Player_updateDamageFaceTime(player);
+
+                    if (entity->def->eSubType != 25 && entity->def->eSubType != 26) {
+                        sound = 5062;
+                    }
+                    Sound_playSound(entity->doomRpg->sound, sound, 0, 3);
+
+                    hud->gotFaceTime = entity->doomRpg->doomCanvas->time + 500;
+                    msg = Hud_getMessageBuffer(hud);
+                    SDL_snprintf(msg, MS_PER_CHAR, "Got %s", entity->def->name);
+                    Hud_finishMessageBuffer(hud);
+                    Game_remove(entity->doomRpg->game, entity);
+                    break;
+                }
+
+                case 6:
+                case 16: {
+                    if (!Player_addAmmo(player, entity->def->eSubType, entity->def->parm)) {
+                        Hud_addMessage(hud, "Ammo at maximum");
+                        return;
+                    }
+                    Player_updateDamageFaceTime(player);
+                    hud->gotFaceTime = entity->doomRpg->doomCanvas->time + 500;
+                    msg = Hud_getMessageBuffer(hud);
+                    SDL_snprintf(msg, MS_PER_CHAR, "Got %s", entity->def->name);
+                    Hud_finishMessageBuffer(hud);
+
+                    Sound_playSound(entity->doomRpg->sound, sound, 0, 3);
+                    Game_remove(entity->doomRpg->game, entity);
+                    break;
+                }
+
+                case 5: {
+                    z = (player->weapons & (1 << entity->def->eSubType)) == 0 && (player->disabledWeapons & (1 << entity->def->eSubType)) == 0;
+
+                    if ((player->weapons & (1 << entity->def->eSubType)) == 0) {
+                        Player_selectWeapon(player, entity->def->eSubType);
+                    }
+
+                    Player_updateDamageFaceTime(player);
+                    player->weapons |= 1 << entity->def->eSubType;
+
+                    wpn = &entity->doomRpg->combat->weaponInfo[entity->def->eSubType];
+                    if (wpn->ammoUsage != 0) {
+                        Player_addAmmo(player, wpn->ammoType, entity->def->parm);
+                    }
+
+                    //Sound.playSound(1);
+                    hud->gotFaceTime = entity->doomRpg->doomCanvas->time + 500;
+                    msg = Hud_getMessageBuffer(hud);
+                    SDL_snprintf(msg, MS_PER_CHAR, "Got %s", entity->def->name);
+                    Hud_finishMessageBuffer(hud);
+                    Game_remove(entity->doomRpg->game, entity);
+
+                    if (z) {
+                        entity->doomRpg->game->tileEvent = 0;
+
+                        if (entity->def->eSubType == 0) {
+                            DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "You got the Axe!|Zombies beware...", false);
+                            sound = 5060;
+                        }
+                        else if (entity->def->eSubType == 1) {
+                            DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "You got the Fire|Extinguisher! It|uses halon can-|isters to put out|fires.", false);
+                            sound = 5060;
+                        }
+                        else if (entity->def->eSubType == 3) {
+                            DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "You got the|Shotgun!", false);
+                            sound = 5057;
+                        }
+                        else if (entity->def->eSubType == 4) {
+                            DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "You got the|Chaingun! Precise|and deadly, but|it's an ammo hog.", false);
+                            sound = 5057;
+                        }
+                        else if (entity->def->eSubType == 5) {
+                            DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "You got the Super|Shotgun! Fierce!", false);
+                            sound = 5057;
+                        }
+                        else if (entity->def->eSubType == 7) {
+                            DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "You got the|Rocket Launcher!|w00t!", false);
+                            sound = 5057;
+                        }
+                        else if (entity->def->eSubType == 6) {
+                            DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "You got the|Plasma Gun!", false);
+                            sound = 5057;
+                        }
+                        else if (entity->def->eSubType == 8) {
+                            DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "You got the BFG!|We could tell you|what BFG stands|for, but this is|a family game.", false);
+                            sound = 5057;
+                        }
+
+                        Sound_playSound(entity->doomRpg->sound, sound, 0, 3);
+                    }
+                    else { // New lines code
+
+                        sound = 5057;
+                        if ((entity->def->eSubType == 0) || entity->def->eSubType == 1) {
+                            sound = 5060;
+                        }
+
+                        Sound_playSound(entity->doomRpg->sound, sound, 0, 3);
+                    }
+                    break;
+                }
+
+                case 10: {
+                    Player_painEvent(player, NULL);
+                    Player_pain(player, 1, 2);
+                    Hud_addMessage(hud, "It burns!");
+                    break;
+                }
+
+                case 11: {
+                    Player_painEvent(player, NULL);
+                    Player_pain(player, 10, 10);
+                    Hud_addMessage(hud, "It really burns!!");
+                    break;
+                }
+            }
     }
 }
 

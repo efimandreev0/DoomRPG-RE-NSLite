@@ -1111,7 +1111,7 @@ void Render_relinkSprite(Render_t* render, Sprite_t* sprite)
 	Sprite_t* sprt;
 	int i;
 
-	if (sprite->node) {
+	if (sprite->node && sprite->node->sprites) {
 		if (sprite->node->sprites == sprite) {
 			sprite->node->sprites = sprite->nodeNext;
 		}
@@ -1155,10 +1155,10 @@ void Render_relinkSprite(Render_t* render, Sprite_t* sprite)
 
 void Render_addMapTextures(Render_t* render, int textureId)
 {
-	// Nuevo: esto evita desbordamientos de búfer
+	// Nuevo: esto evita desbordamientos de bï¿½fer
 	// Esto sucede en el archivo level05.bsp, ya que al leer los datos (floorTex) tiene un valor de 153(0x99) 
-	// lo que supera el límite de memoria inicializado de mediaTexturesIds que es 152, 
-	// creando así el desbordamiento, esto también sucede en dispositivos móviles BREW
+	// lo que supera el lï¿½mite de memoria inicializado de mediaTexturesIds que es 152, 
+	// creando asï¿½ el desbordamiento, esto tambiï¿½n sucede en dispositivos mï¿½viles BREW
 	//
 	// New: this prevents buffer overflows
 	// This happens in the level05.bsp file, since when reading the data (floorTex) it has a value of 153(0x99)
@@ -1190,7 +1190,7 @@ void Render_addMapTexture(Render_t* render, int textureIndex)
 
 void Render_addMapSprites(Render_t* render, int spriteId)
 {
-	// Nuevo: esto evita desbordamientos de búfer
+	// Nuevo: esto evita desbordamientos de bï¿½fer
 	// New avoid buffer overflows
 	if (spriteId >= render->spriteCnt) {
 		spriteId = (render->spriteCnt - 1);
@@ -2814,7 +2814,7 @@ void Render_draw2DSprite(Render_t* render, int weaponFrame, int flashFrame, int 
 
 
 			// Port:
-			// corregir píxeles vacíos en la parte inferior del gráfico
+			// corregir pï¿½xeles vacï¿½os en la parte inferior del grï¿½fico
 			// fix empty pixels at bottom of graph
 			{
 				//i21 += 1;

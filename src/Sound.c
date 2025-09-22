@@ -10,7 +10,22 @@
 #include "MenuSystem.h"
 #include "SDL_Video.h"
 #include "Z_Zip.h"
+#ifdef __aarch64__
+#define INIT_ALLSOUNDS	0
 
+static int soundTable[MAX_AUDIOFILES] = {
+	5039, 5040, 5042, 5043, 5044, 5045, 5046, 5047, 5048, 5049, 5050,
+	5051, 5052, 5053, 5054, 5055, 5057, 5058, 5059, 5060, 5061, 5062,
+	5063, 5064, 5065, 5066, 5067, 5068, 5069, 5070, 5071, 5072, 5073,
+	5074, 5076, 5077, 5078, 5079, 5080, 5081, 5082, 5083, 5084, 5085,
+	5086, 5087, 5088, 5089, 5090, 5091, 5092, 5093, 5094, 5095, 5096,
+	5097, 5098, 5099, 5100, 5101, 5102, 5103, 5104, 5105, 5106, 5107,
+	5108, 5109, 5110, 5111, 5112, 5113, 5114, 5115, 5116, 5117, 5118,
+	5119, 5120, 5121, 5122, 5123, 5124, 5125, 5126, 5127, 5128, 5129,
+	5130, 5131, 5133, 5134, 5136, 5137, 5138
+};
+
+#else
 #define INIT_ALLSOUNDS	1
 
 static soundTable[MAX_AUDIOFILES] = {
@@ -24,7 +39,380 @@ static soundTable[MAX_AUDIOFILES] = {
 	5119, 5120, 5121, 5122, 5123, 5124, 5125, 5126, 5127, 5128, 5129,
 	5130, 5131, 5133, 5134, 5136, 5137, 5138
 };
+#endif
+#ifdef __aarch64__
+Sound_t* Sound_init(Sound_t* sound, DoomRPG_t* doomRpg)
+{
+	int i;
+	SoundChannel_t* chan;
 
+	printf("Sound_init\n");
+
+	if (sound == NULL)
+	{
+		sound = SDL_malloc(sizeof(Sound_t));
+		if (sound == NULL) {
+			return NULL;
+		}
+	}
+	SDL_memset(sound, 0, sizeof(Sound_t));
+
+	sound->soundEnabled = 0;
+	sound->priority = 3;
+	sound->channel = 0;
+	sound->volume = 100;
+
+	i = 0;
+	do {
+		chan = &sound->soundChannel[i];
+		chan->mediaAudioSound = NULL;
+		chan->mediaAudioMusic = NULL;
+		chan->size = 0;
+		chan->flags = 0;
+	} while (++i < (MAX_SOUNDCHANNELS + 1));
+
+	sound->doomRpg = doomRpg;
+
+	Mix_AllocateChannels(MAX_SOUNDCHANNELS);
+	Mix_Volume(-1, (sound->volume * MIX_MAX_VOLUME) / 100);
+	Mix_VolumeMusic((sound->volume * MIX_MAX_VOLUME) / 100);
+
+
+#if INIT_ALLSOUNDS
+	sound->audioFiles = SDL_malloc(sizeof(AudioFile_t) * MAX_AUDIOFILES);
+
+	for (i = 0; i < MAX_AUDIOFILES; i++)
+	{
+		char fileName[128];
+		byte* fdata;
+		int fSize;
+		SDL_RWops* rw;
+		snprintf(fileName, sizeof(fileName), "%d.wav", soundTable[i]);
+		fdata = readZipFileEntry(fileName, &zipFile, &fSize);
+		if(fdata) {
+			rw = SDL_RWFromMem(fdata, fSize);
+			if (!rw) {
+				DoomRPG_Error("Error with SDL_RWFromMem: %s\n", SDL_GetError());
+			}
+			sound->audioFiles[i].ptr = Mix_LoadWAV_RW(rw, SDL_TRUE); // SDL_TRUE освобождает rwops
+			SDL_free(fdata);
+		}
+	}
+#endif
+	return sound;
+}
+
+void Sound_free(Sound_t* sound, boolean freePtr)
+{
+    if (sound->soundEnabled) {
+    	Mix_HaltChannel(-1);
+    	Mix_HaltMusic();
+
+#if INIT_ALLSOUNDS
+    	if (sound->audioFiles) {
+    		for (int i = 0; i < MAX_AUDIOFILES; i++) {
+    			if (sound->audioFiles[i].ptr) {
+    				Mix_FreeChunk((Mix_Chunk*)sound->audioFiles[i].ptr); Mix_FreeChunk((Mix_Chunk*)sound->audioFiles[i].ptr);
+    			}
+    		}
+    		SDL_free(sound->audioFiles);
+    		sound->audioFiles = NULL;
+    	}
+#endif
+
+    	if (freePtr) {
+    		SDL_free(sound);
+    	}
+    }
+}
+
+void Sound_stopSounds(Sound_t* sound)
+{
+    if (sound->soundEnabled) {
+    	Mix_HaltChannel(-1);
+    	Mix_HaltMusic();
+
+    	for (int chan = 0; chan < (MAX_SOUNDCHANNELS + 1); ++chan) {
+    		sound->soundChannel[chan].flags = 0;
+    	}
+
+    	sound->priority = 0;
+    }
+}
+
+void Sound_freeSound(Sound_t* sound, int chan)
+{
+    if (sound->soundEnabled) {
+    	if (chan < 0 || chan > MAX_SOUNDCHANNELS) return;
+
+    	SoundChannel_t* sChannel = &sound->soundChannel[chan];
+
+    	if (sChannel->flags & SND_FLG_ISMUSIC) {
+    		if (Mix_PlayingMusic()) {
+    			Mix_HaltMusic();
+    		}
+#if !INIT_ALLSOUNDS
+    		if (sChannel->mediaAudioMusic) {
+    			Mix_FreeMusic(sChannel->mediaAudioMusic);
+    		}
+#endif
+    		sChannel->mediaAudioMusic = NULL;
+    	} else {
+    		if (Mix_Playing(chan)) {
+    			Mix_HaltChannel(chan);
+    		}
+#if !INIT_ALLSOUNDS
+    		if (sChannel->mediaAudioSound) {
+    			Mix_FreeChunk(sChannel->mediaAudioSound);
+    		}
+#endif
+    		sChannel->mediaAudioSound = NULL;
+    	}
+
+    	sChannel->flags = 0;
+    }
+}
+
+void Sound_freeSounds(Sound_t* sound)
+{
+    for (int chan = 0; chan < (MAX_SOUNDCHANNELS + 1); ++chan) {
+        Sound_freeSound(sound, chan);
+    }
+}
+
+int Sound_getState(Sound_t* sound, int resourceID)
+{
+    int playing_count = 0;
+    for (int i = 0; i < MAX_SOUNDCHANNELS; ++i) {
+        if (Mix_Playing(i)) {
+            playing_count++;
+        }
+    }
+    if (Mix_PlayingMusic()) {
+        playing_count++;
+    }
+    return playing_count;
+}
+
+int Sound_getFreeChanel(Sound_t* sound) {
+    for (int chan = 0; chan < MAX_SOUNDCHANNELS; ++chan) {
+        if (!Mix_Playing(chan)) {
+            Sound_freeSound(sound, chan);
+            return chan;
+        }
+    }
+    return -1; //no free channels
+}
+void Sound_loadSound(Sound_t* sound, int chan, short resourceID)
+{
+    if (sound->soundEnabled) {
+	    // checking channel
+    if (chan < 0 || chan > MAX_SOUNDCHANNELS) {
+        return;
+    }
+
+    SoundChannel_t* sChannel = &sound->soundChannel[chan];
+    byte saved_flags = sChannel->flags;
+    Sound_freeSound(sound, chan);
+    sChannel->flags = saved_flags;
+
+#if INIT_ALLSOUNDS
+    int id = Sound_getFromResourceID(resourceID);
+    if (id == -1) {
+        printf("Error: Resource ID %d not found in soundTable.\n", resourceID);
+        return;
+    }
+
+    if (sChannel->flags & SND_FLG_ISMUSIC) {
+        sChannel->mediaAudioMusic = (Mix_Music*)sound->audioFiles[id].ptr;
+    } else {
+        sChannel->mediaAudioSound = (Mix_Chunk*)sound->audioFiles[id].ptr;
+    }
+
+#else
+    char fileName[128];
+    SDL_RWops* fdata = NULL;
+    int fSize = 0;
+    	const char* base_path = "DoomRPG/";
+    	char full_path[128];
+    //SDL_RWops* rw;
+
+    // mp3 or wav
+    if (sChannel->flags & SND_FLG_ISMUSIC) {
+        if (resourceID == 5039 || resourceID == 5040 || resourceID == 5043) {
+	        snprintf(fileName, sizeof(fileName), "%d.mp3", resourceID);
+        }
+
+    	snprintf(full_path, sizeof(full_path), "%s%s", base_path, fileName);
+        // reading file
+        //fdata = readZipFileEntry2(fileName, &zipFile, &fSize);
+    	//rw = SDL_RWFromMem(fdata, fSize);
+    	sChannel->mediaAudioMusic = Mix_LoadMUS(full_path);
+    	SDL_free(fdata);
+
+    	if (!sChannel->mediaAudioMusic) {
+    		printf("Error loading music '%s': %s\n", fileName, Mix_GetError());
+    	}
+
+    } else {
+        snprintf(fileName, sizeof(fileName), "%d.wav", resourceID);
+    	snprintf(full_path, sizeof(full_path), "%s%s", base_path, fileName);
+    	sChannel->mediaAudioSound = Mix_LoadWAV(full_path);
+    	SDL_free(fdata);
+    	if (!sChannel->mediaAudioSound) {
+    		printf("Error loading sound '%s': %s\n", fileName, Mix_GetError());
+    	}
+    }
+#endif
+    }
+}
+void Sound_readySound(Sound_t* sound, int chan)
+{
+    if (sound->soundEnabled) {
+    	if (chan < 0 || chan > MAX_SOUNDCHANNELS) return;
+
+    	SoundChannel_t* sChannel = &sound->soundChannel[chan];
+
+    	if (sChannel->flags & SND_FLG_ISMUSIC) {
+    		Mix_VolumeMusic((sound->volume * MIX_MAX_VOLUME) / 100);
+    	} else {
+    		if (sChannel->mediaAudioSound) {
+    			Mix_VolumeChunk(sChannel->mediaAudioSound, (sound->volume * MIX_MAX_VOLUME) / 100);
+    		}
+    	}
+    }
+}
+
+void Sound_playSound(Sound_t* sound, int resourceID, byte flags, int priority)
+{
+	if (sound->soundEnabled) {
+		boolean sndPriority = 1; //dummy
+
+		if (sound->soundEnabled == 0) return;
+
+		int id = Sound_getFromResourceID(resourceID);
+		if (id < 0) return; // no found resource
+
+		boolean isMusic = (flags & SND_FLG_ISMUSIC);
+
+		if (resourceID == 5039 || resourceID == 5040 || resourceID == 5043) {
+			isMusic = 1; // 1 = true
+		}
+
+		if (sndPriority && !isMusic && (priority < sound->priority) && (Sound_getState(sound, resourceID) > 0)) {
+			printf("Sound: Dynamic playback of %d prevented by priority (%d < %d)\n", resourceID, priority, sound->priority);
+			return;
+		}
+
+		if (flags & SND_FLG_STOPSOUNDS) {
+			Sound_stopSounds(sound);
+		}
+
+		int target_channel;
+		if (isMusic) {
+			target_channel = MAX_SOUNDCHANNELS;
+		} else {
+			target_channel = Sound_getFreeChanel(sound);
+		}
+
+		if (target_channel < 0) {
+			// no channels
+			return;
+		}
+
+		sound->channel = target_channel;
+		sound->soundChannel[target_channel].flags = flags;
+
+		if (isMusic) {
+			sound->soundChannel[target_channel].flags |= SND_FLG_ISMUSIC;
+		}
+
+
+		Sound_loadSound(sound, target_channel, resourceID);
+		Sound_readySound(sound, target_channel);
+
+		sound->priority = priority;
+
+		if (isMusic) {
+			if (sound->soundChannel[target_channel].mediaAudioMusic) {
+				Mix_PlayMusic(sound->soundChannel[target_channel].mediaAudioMusic, (flags & SND_FLG_LOOP) ? -1 : 1);
+			}
+		} else {
+			if (sound->soundChannel[target_channel].mediaAudioSound) {
+				Mix_PlayChannel(target_channel, sound->soundChannel[target_channel].mediaAudioSound, (flags & SND_FLG_LOOP) ? -1 : 0);
+			}
+		}
+	}
+}
+
+int Sound_getFromResourceID(int resourceID)
+{
+    for (int i = 0; i < MAX_AUDIOFILES; i++) {
+        if (soundTable[i] == resourceID) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+void Sound_updateVolume(Sound_t* sound)
+{
+    int new_volume = (sound->volume * MIX_MAX_VOLUME) / 100;
+
+
+    Mix_VolumeMusic(new_volume);
+    Mix_Volume(-1, new_volume);
+
+    // if need update volume for already loaded mp3 chunks
+    for (int chan = 0; chan < MAX_SOUNDCHANNELS; ++chan) {
+        if (sound->soundChannel[chan].mediaAudioSound) {
+            Mix_VolumeChunk(sound->soundChannel[chan].mediaAudioSound, new_volume);
+        }
+    }
+
+    /*
+    // old logic
+    int chan = 0;
+    do {
+        if (sound->soundChannel[chan].flags & SND_FLG_ISMUSIC) {
+            if (Mix_PlayingMusic()) {
+                Mix_VolumeMusic((sound->volume * MIX_MAX_VOLUME) / 100);
+            }
+        } else {
+            if (Mix_Playing(chan) && sound->soundChannel[chan].mediaAudioSound) {
+                Mix_VolumeChunk(sound->soundChannel[chan].mediaAudioSound, (sound->volume * MIX_MAX_VOLUME) / 100);
+            }
+        }
+    } while (++chan < (MAX_SOUNDCHANNELS + 1));
+    */
+
+	int menu = sound->doomRpg->menuSystem->menu;
+	if (menu == MENU_SOUND || menu == MENU_INGAME_SOUND) {
+		Menu_textVolume(sound->doomRpg->menu, sound->volume);
+	}
+}
+
+int Sound_minusVolume(Sound_t* sound, int volume)
+{
+    sound->volume -= volume;
+    if (sound->volume < 0) {
+        sound->volume = 0;
+    }
+    Sound_updateVolume(sound);
+    return sound->volume;
+}
+
+int Sound_addVolume(Sound_t* sound, int volume)
+{
+    sound->volume += volume;
+    if (sound->volume > 100) {
+        sound->volume = 100;
+    }
+    Sound_updateVolume(sound);
+    return sound->volume;
+}
+#else
 Sound_t* Sound_init(Sound_t* sound, DoomRPG_t* doomRpg)
 {
 	int i;
@@ -450,3 +838,4 @@ int Sound_addVolume(Sound_t* sound, int volume)
 	Sound_updateVolume(sound);
 	return sound->volume;
 }
+#endif

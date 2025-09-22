@@ -6,6 +6,9 @@
 #include "DoomRPG.h"
 #include "DoomCanvas.h"
 #include "Hud.h"
+
+#include <switch/services/set.h>
+
 #include "Player.h"
 #include "Combat.h"
 #include "CombatEntity.h"
@@ -231,19 +234,40 @@ void Hud_drawBottomBar(Hud_t* hud)
     }
 
     // draw orientation text
-    switch (doomCanvas->destAngle & 255) {
-    case 0:
-        strncpy(dir, "E", sizeof(dir));
-        break;
-    case 128:
-        strncpy(dir, "W", sizeof(dir));
-        break;
-    case 192:
-        strncpy(dir, "S", sizeof(dir));
-        break;
-    default:
-        strncpy(dir, "N", sizeof(dir));
-        break;
+    u64 LanguageCode=0;
+    setInitialize();
+    setGetSystemLanguage(&LanguageCode);
+    if (strstr((char*)&LanguageCode, "ru")) {
+        switch (doomCanvas->destAngle & 255) {
+            case 0:
+                strncpy(dir, "Â", sizeof(dir));
+                break;
+            case 128:
+                strncpy(dir, "Ç", sizeof(dir));
+                break;
+            case 192:
+                strncpy(dir, "Þ", sizeof(dir));
+                break;
+            default:
+                strncpy(dir, "Ñ", sizeof(dir));
+                break;
+        }
+    }
+    else {
+        switch (doomCanvas->destAngle & 255) {
+            case 0:
+                strncpy(dir, "E", sizeof(dir));
+                break;
+            case 128:
+                strncpy(dir, "W", sizeof(dir));
+                break;
+            case 192:
+                strncpy(dir, "S", sizeof(dir));
+                break;
+            default:
+                strncpy(dir, "N", sizeof(dir));
+                break;
+        }
     }
 
     DoomCanvas_drawImage(doomCanvas, &hud->imgStatusArrow, hud->statusOrientationArrowXpos + cx, y - 3, 9);
@@ -299,7 +323,7 @@ void Hud_drawEffects(Hud_t* hud)
     }
 
     if (doomRpg->player->berserkerTics) {
-        // Bloqueo esta línea ya que la puse en otra función.
+        // Bloqueo esta l?nea ya que la puse en otra funci?n.
         // I block this line since I put it in another function.
         //{
         //    Render_setBerserkColor(doomRpg->render);

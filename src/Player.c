@@ -7,6 +7,9 @@
 #include "DoomCanvas.h"
 #include "Game.h"
 #include "Player.h"
+
+#include <switch/services/set.h>
+
 #include "Hud.h"
 #include "Entity.h"
 #include "EntityDef.h"
@@ -82,7 +85,15 @@ void Player_addArmor(Player_t* player, int i)
 		CombatEntity_setArmor(ce, armmor + i);
 	}
 	if (CombatEntity_getArmor(ce) > armmor) {
-		SDL_snprintf(msg, sizeof(msg), "Gained %d armor", (CombatEntity_getArmor(ce) - armmor));
+		u64 LanguageCode=0;
+		setInitialize();
+		setGetSystemLanguage(&LanguageCode);
+		if (strstr((char*)&LanguageCode, "ru")) {
+			SDL_snprintf(msg, sizeof(msg), "Получено %d брони", (CombatEntity_getArmor(ce) - armmor));
+		}
+		else {
+			SDL_snprintf(msg, sizeof(msg), "Gained %d armor", (CombatEntity_getArmor(ce) - armmor));
+		}
 		Hud_addMessage(player->doomRpg->hud, msg);
 	}
 }
@@ -115,7 +126,15 @@ void Player_addHealth(Player_t* player, int i)
 		CombatEntity_setHealth(ce, health + i);
 	}
 	if (CombatEntity_getHealth(ce) > health) {
-		SDL_snprintf(msg, sizeof(msg), "Gained %d health", (CombatEntity_getHealth(ce) - health));
+		u64 LanguageCode=0;
+		setInitialize();
+		setGetSystemLanguage(&LanguageCode);
+		if (strstr((char*)&LanguageCode, "ru")) {
+			SDL_snprintf(msg, sizeof(msg), "Получено %d здоровья", (CombatEntity_getHealth(ce) - health));
+		}
+		else {
+			SDL_snprintf(msg, sizeof(msg), "Gained %d health", (CombatEntity_getHealth(ce) - health));
+		}
 		Hud_addMessage(player->doomRpg->hud, msg);
 	}
 }
@@ -230,7 +249,15 @@ void Player_addXP(Player_t* player, int xp)
 {
 	char text[64];
 
-	SDL_snprintf(text, sizeof(text), "Gained %d XP!", xp);
+	u64 LanguageCode=0;
+	setInitialize();
+	setGetSystemLanguage(&LanguageCode);
+	if (strstr((char*)&LanguageCode, "ru")) {
+		SDL_snprintf(text, sizeof(text), "Получено %d опыта!", xp);
+	}
+	else {
+		SDL_snprintf(text, sizeof(text), "Gained %d XP!", xp);
+	}
 	Hud_addMessage(player->doomRpg->hud, text);
 	player->currentXP += xp;
 	player->xpGained += xp;
@@ -602,14 +629,30 @@ void Player_pain(Player_t* player, int i, int i2)
 		h1 = (CombatEntity_getHealth(ce) << 16) / (CombatEntity_getMaxHealth(ce) << 8);
 		h2 = ((CombatEntity_getHealth(ce) - i) << 16) / (CombatEntity_getMaxHealth(ce) << 8);
 		if (h2 > 0) {
-			if (h1 > 26 && h2 <= 26) {
-				Hud_addMessageForce(player->doomRpg->hud, MenuSystem_buildDivider(player->doomRpg->menuSystem, "Near Death!"), true);
+			u64 LanguageCode=0;
+			setInitialize();
+			setGetSystemLanguage(&LanguageCode);
+			if (strstr((char*)&LanguageCode, "ru")) {
+				if (h1 > 26 && h2 <= 26) {
+					Hud_addMessageForce(player->doomRpg->hud, MenuSystem_buildDivider(player->doomRpg->menuSystem, "Почти умер!"), true);
+				}
+				else if (h1 > 78 && h2 <= 78) {
+					Hud_addMessageForce(player->doomRpg->hud, MenuSystem_buildDivider(player->doomRpg->menuSystem, "Низкое здоровье!"), true);
+				}
+				else if (armor > 0 && CombatEntity_getArmor(ce) == 0) {
+					Hud_addMessageForce(player->doomRpg->hud, MenuSystem_buildDivider(player->doomRpg->menuSystem, "Броня сломалась!"), true);
+				}
 			}
-			else if (h1 > 78 && h2 <= 78) {
-				Hud_addMessageForce(player->doomRpg->hud, MenuSystem_buildDivider(player->doomRpg->menuSystem, "Low Health!"), true);
-			}
-			else if (armor > 0 && CombatEntity_getArmor(ce) == 0) {
-				Hud_addMessageForce(player->doomRpg->hud, MenuSystem_buildDivider(player->doomRpg->menuSystem, "Armor Gone!"), true);
+			else {
+				if (h1 > 26 && h2 <= 26) {
+					Hud_addMessageForce(player->doomRpg->hud, MenuSystem_buildDivider(player->doomRpg->menuSystem, "Near Death!"), true);
+				}
+				else if (h1 > 78 && h2 <= 78) {
+					Hud_addMessageForce(player->doomRpg->hud, MenuSystem_buildDivider(player->doomRpg->menuSystem, "Low Health!"), true);
+				}
+				else if (armor > 0 && CombatEntity_getArmor(ce) == 0) {
+					Hud_addMessageForce(player->doomRpg->hud, MenuSystem_buildDivider(player->doomRpg->menuSystem, "Armor Gone!"), true);
+				}
 			}
 		}
 		Player_addHealth(player, -i);

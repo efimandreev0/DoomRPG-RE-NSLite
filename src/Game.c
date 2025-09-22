@@ -9,6 +9,9 @@
 #include "EntityDef.h"
 #include "EntityMonster.h"
 #include "Game.h"
+
+#include <switch/services/set.h>
+
 #include "Render.h"
 #include "Hud.h"
 #include "Menu.h"
@@ -93,16 +96,33 @@ Game_t* Game_init(Game_t* game, DoomRPG_t* doomRpg)
 	strncpy(game->mapNames[MAPNAME_JUNCTION_DESTROYED], "Junction", 24);
 	strncpy(game->mapNames[MAPNAME_REACTOR], "Reactor", 24);
 
-	strncpy(game->mapFiles[MAPFILE_INTRO], "/intro.bsp", 24);
-	strncpy(game->mapFiles[MAPFILE_L01], "/level01.bsp", 24);
-	strncpy(game->mapFiles[MAPFILE_L02], "/level02.bsp", 24);
-	strncpy(game->mapFiles[MAPFILE_L03], "/level03.bsp", 24);
-	strncpy(game->mapFiles[MAPFILE_L04], "/level04.bsp", 24);
-	strncpy(game->mapFiles[MAPFILE_L05], "/level05.bsp", 24);
-	strncpy(game->mapFiles[MAPFILE_L06], "/level06.bsp", 24);
-	strncpy(game->mapFiles[MAPFILE_L07], "/level07.bsp", 24);
-	strncpy(game->mapFiles[MAPFILE_JUNCTION], "/junction.bsp", 24);
-	strncpy(game->mapFiles[MAPFILE_JUNCTION_DESTROYED], "/junction_destroyed.bsp", 24);
+	u64 LanguageCode=0;
+	setInitialize();
+	setGetSystemLanguage(&LanguageCode);
+	if (strstr((char*)&LanguageCode, "ru")) {
+		strncpy(game->mapFiles[MAPFILE_INTRO], "/intro_ru.bsp", 24);
+		strncpy(game->mapFiles[MAPFILE_L01], "/level01_ru.bsp", 24);
+		strncpy(game->mapFiles[MAPFILE_L02], "/level02_ru.bsp", 24);
+		strncpy(game->mapFiles[MAPFILE_L03], "/level03_ru.bsp", 24);
+		strncpy(game->mapFiles[MAPFILE_L04], "/level04_ru.bsp", 24);
+		strncpy(game->mapFiles[MAPFILE_L05], "/level05_ru.bsp", 24);
+		strncpy(game->mapFiles[MAPFILE_L06], "/level06_ru.bsp", 24);
+		strncpy(game->mapFiles[MAPFILE_L07], "/level07_ru.bsp", 24);
+		strncpy(game->mapFiles[MAPFILE_JUNCTION], "/junction_ru.bsp", 24);
+		strncpy(game->mapFiles[MAPFILE_JUNCTION_DESTROYED], "/junction_destroyed_ru.bsp", 24);
+	}
+	else{
+		strncpy(game->mapFiles[MAPFILE_INTRO], "/intro.bsp", 24);
+		strncpy(game->mapFiles[MAPFILE_L01], "/level01.bsp", 24);
+		strncpy(game->mapFiles[MAPFILE_L02], "/level02.bsp", 24);
+		strncpy(game->mapFiles[MAPFILE_L03], "/level03.bsp", 24);
+		strncpy(game->mapFiles[MAPFILE_L04], "/level04.bsp", 24);
+		strncpy(game->mapFiles[MAPFILE_L05], "/level05.bsp", 24);
+		strncpy(game->mapFiles[MAPFILE_L06], "/level06.bsp", 24);
+		strncpy(game->mapFiles[MAPFILE_L07], "/level07.bsp", 24);
+		strncpy(game->mapFiles[MAPFILE_JUNCTION], "/junction.bsp", 24);
+		strncpy(game->mapFiles[MAPFILE_JUNCTION_DESTROYED], "/junction_destroyed.bsp", 24);
+	}
 	strncpy(game->mapFiles[MAPFILE_ITEMS], "/items.bsp", 24);
 	strncpy(game->mapFiles[MAPFILE_REACTOR], "/reactor.bsp", 24);
 	strncpy(game->mapFiles[MAPFILE_END_GAME], "/endgame.bsp", 24);
@@ -363,15 +383,29 @@ void Game_hurtEntityAt(Game_t* game, int i, int i2, int i3, int i4, int z, int z
 				}
 
 				Entity_pain(entity, i3, i4);
-
-				if (CombatEntity_getHealth(&entity->monster->ce) <= 0) {
-					SDL_snprintf(text, sizeof(text), "%s took %d damage! %s died!", entity->def->name, (i3 + i4), entity->def->name);
+				u64 LanguageCode=0;
+				setInitialize();
+				setGetSystemLanguage(&LanguageCode);
+				if (strstr((char*)&LanguageCode, "ru")) {
+					if (CombatEntity_getHealth(&entity->monster->ce) <= 0) {
+						SDL_snprintf(text, sizeof(text), "%s получил %d урона! %s умер!", entity->def->name, (i3 + i4), entity->def->name);
+						Hud_addMessage(game->doomRpg->hud, text);
+						Entity_died(entity);
+						return;
+					}
+					SDL_snprintf(text, sizeof(text), "%s получил %d урона!", entity->def->name, (i3 + i4));
 					Hud_addMessage(game->doomRpg->hud, text);
-					Entity_died(entity);
-					return;
 				}
-				SDL_snprintf(text, sizeof(text), "%s took %d damage!", entity->def->name, (i3 + i4));
-				Hud_addMessage(game->doomRpg->hud, text);
+				else{
+					if (CombatEntity_getHealth(&entity->monster->ce) <= 0) {
+						SDL_snprintf(text, sizeof(text), "%s took %d damage! %s died!", entity->def->name, (i3 + i4), entity->def->name);
+						Hud_addMessage(game->doomRpg->hud, text);
+						Entity_died(entity);
+						return;
+					}
+					SDL_snprintf(text, sizeof(text), "%s took %d damage!", entity->def->name, (i3 + i4));
+					Hud_addMessage(game->doomRpg->hud, text);
+				}
 
 				// Pain Sound
 				soundId = EntityMonster_getSoundRnd(entity->monster, 6);
@@ -624,16 +658,16 @@ boolean Game_checkConfigVersion(Game_t* game)
 	worldFile = NULL;
 
 	rnt = false;
-	configFile = SDL_RWFromFile("Config", "r");
+	configFile = SDL_RWFromFile("/switch/DoomRPG/Saves/Config", "r");
 	if (configFile) {
-		playerFile = SDL_RWFromFile("Player", "r");
+		playerFile = SDL_RWFromFile("/switch/DoomRPG/Saves/Player", "r");
 		if (playerFile) {
-			player2File = SDL_RWFromFile("Player2", "r");
+			player2File = SDL_RWFromFile("/switch/DoomRPG/Saves/Player2", "r");
 			if (player2File) {
-				worldFile = SDL_RWFromFile("World", "r");
+				worldFile = SDL_RWFromFile("/switch/DoomRPG/Saves/World", "r");
 				if (worldFile) {
 
-					rw = SDL_RWFromFile("Config", "r");
+					rw = SDL_RWFromFile("/switch/DoomRPG/Saves/Config", "r");
 					version = File_readInt(rw);
 					if (version == CONFIG_VERSION) {
 						rnt = true;
@@ -700,7 +734,7 @@ void Game_loadConfig(Game_t* game)
 	
 	printf("loadConfig\n");
 
-	rw = SDL_RWFromFile("Config", "r");
+	rw = SDL_RWFromFile("/switch/DoomRPG/Saves/Config", "r");
 	if (rw) {
 		version = File_readInt(rw);
 		if (version == CONFIG_VERSION) {
@@ -1071,7 +1105,7 @@ void Game_loadState(Game_t* game, int i)
 	doomCanvas = game->doomRpg->doomCanvas;
 
 	//printf("load %s\event", (codeId == 1) ? "Player2" : "Player");
-	Game_loadPlayerState(game, (i == 1) ? "Player2" : "Player");
+	Game_loadPlayerState(game, (i == 1) ? "/switch/DoomRPG/Saves/Player2" : "/switch/DoomRPG/Saves/Player");
 
 	game->activeLoadType = i;
 	game->doomRpg->player->nextLevelXP = Player_calcLevelXP(game->doomRpg->player, game->doomRpg->player->level);
@@ -1093,7 +1127,10 @@ void Game_loadState(Game_t* game, int i)
 	game->isLoaded = true;
 }
 
-void Game_loadWorldState(Game_t* game)
+/* ===== Load function =====
+   This loader is defensive: if an index is out of range we still consume the
+   corresponding bytes from the file to preserve stream alignment and continue. */
+void Game_loadWorldState(Game_t* game, Render_t* render)
 {
 	SDL_RWops* rw;
 	Entity_t* entity;
@@ -1107,12 +1144,13 @@ void Game_loadWorldState(Game_t* game)
 
 	//printf("loadWorldState\event");
 
-	rw = SDL_RWFromFile("World", "rb");
+	rw = SDL_RWFromFile("/switch/DoomRPG/Saves/World", "rb");
 	if (rw)
 	{
 		// Map Entities
 		cnt = File_readInt(rw);
 		for (i = 0; i < cnt; i++) {
+			//render->doomRpg->doomCanvas->castEntity[i];
 			entity = &game->entities[i];
 			Game_unlinkEntity(game, entity);
 
@@ -1121,7 +1159,7 @@ void Game_loadWorldState(Game_t* game)
 
 			if ((entity->info & 0xffff) != 0) {
 				if ((entity->info & 0x200000) == 0) {
-					sprite = &game->doomRpg->render->mapSprites[(entity->info & 65535) - 1];
+					sprite = &render->mapSprites[(entity->info & 65535) - 1];
 
 					sprite->info = (sprite->info & 0xFFFF) | (File_readShort(rw) << 16);
 					sprite->x = File_readInt(rw);
@@ -1153,7 +1191,7 @@ void Game_loadWorldState(Game_t* game)
 						data2 = File_readByte(rw);
 						entity->def = EntityDef_find(game->doomRpg->entityDef, (byte)data, (byte)data2);
 						sprite->info = (sprite->info & 0xFFFFFE00) | entity->def->tileIndex;
-						
+
 					}
 					else {
 						sprite->info = (sprite->info & 0xFFFFFE00) | File_readShort(rw);
@@ -1168,10 +1206,10 @@ void Game_loadWorldState(Game_t* game)
 						}
 					}
 
-					Render_relinkSprite(game->doomRpg->render, sprite);
+					Render_relinkSprite(render, sprite);
 				}
 				else {
-					line = &game->doomRpg->render->lines[(entity->info & 0xffff) - 1];
+					line = &render->lines[(entity->info & 0xffff) - 1];
 
 					line->flags = File_readInt(rw);
 					if ((line->flags & 28) != 0) {
@@ -1195,29 +1233,29 @@ void Game_loadWorldState(Game_t* game)
 				}
 			}
 		}
-		
+
 		// Map Lines
 		cnt = File_readInt(rw);
 		for (i = 0; i < cnt; i++) {
 			bData = File_readBoolean(rw);
 			if (bData) {
-				game->doomRpg->render->lines[i].flags |= 0x80;
+				render->lines[i].flags |= 0x80;
 			}
 		}
-		
+
 		// Map Sprites
 		cnt = File_readInt(rw);
 		for (i = 0; i < cnt; i++) {
 			bData = File_readBoolean(rw);
 			if (bData) {
-				game->doomRpg->render->mapSprites[i].info |= 0x10000000;
+				render->mapSprites[i].info |= 0x10000000;
 			}
 		}
 
 		// Map Flags
-		for (i = 0; i < sizeof(game->doomRpg->render->mapFlags); i++) {
+		for (i = 0; i < sizeof(render->mapFlags); i++) {
 			if (File_readBoolean(rw)) {
-				game->doomRpg->render->mapFlags[i] |= BIT_AM_VISITED;
+				render->mapFlags[i] |= BIT_AM_VISITED;
 			}
 		}
 
@@ -1249,24 +1287,25 @@ void Game_loadWorldState(Game_t* game)
 		// Map Floor/Ceiling Color
 		cColor = File_readShort(rw);
 		fColor = File_readShort(rw);
-		for (i = 0; i < game->doomRpg->render->screenWidth; i++) {
-			game->doomRpg->render->ceilingColor[i] = cColor;
-			game->doomRpg->render->floorColor[i] = fColor;
+		for (i = 0; i < render->screenWidth; i++) {
+			render->ceilingColor[i] = cColor;
+			render->floorColor[i] = fColor;
 		}
 
 		// Map Tile Events
-		for (i = 0; i < game->doomRpg->render->numTileEvents; i++) {
-			game->doomRpg->render->tileEvents[i] = (game->doomRpg->render->tileEvents[i] & 0xE1ffffff) | (File_readByte(rw) << 25);
-			int index = ((game->doomRpg->render->tileEvents[i] & 0x7FC00) >> 10) * BYTE_CODE_MAX;
+		for (i = 0; i < render->numTileEvents; i++) {
+			render->tileEvents[i] = (render->tileEvents[i] & 0xE1ffffff) | (File_readByte(rw) << 25);
+			int index = ((render->tileEvents[i] & 0x7FC00) >> 10) * BYTE_CODE_MAX;
 			int count = File_readInt(rw);
 			for (int j = 0; j < count; j++) {
-				game->doomRpg->render->mapByteCode[index + (File_readInt(rw) * BYTE_CODE_MAX) + BYTE_CODE_ARG2] = 0;
+				render->mapByteCode[index + (File_readInt(rw) * BYTE_CODE_MAX) + BYTE_CODE_ARG2] = 0;
 			}
 		}
 	}
 
 	SDL_RWclose(rw);
 }
+
 
 void Game_monsterAI(Game_t* game)
 {
@@ -1363,10 +1402,10 @@ boolean Game_performDoorEvent(Game_t* game, int codeId, int arg1, int flags)
 void Game_deleteSaveFiles(Game_t* game)
 {
 	printf("Removing saved state...\n");
-	remove("Config");
-	remove("Player");
-	remove("Player2");
-	remove("World");
+	remove("/switch/DoomRPG/Saves/Config");
+	remove("/switch/DoomRPG/Saves/Player");
+	remove("/switch/DoomRPG/Saves/Player2");
+	remove("/switch/DoomRPG/Saves/World");
 }
 
 void Game_remove(Game_t* game, Entity_t* entity)
@@ -1918,7 +1957,7 @@ void Game_saveConfig(Game_t* game, int num)
 	int version;
 	//printf("saveConfig %d\event", num);
 
-	rw = SDL_RWFromFile("Config", "w");
+	rw = SDL_RWFromFile("/switch/DoomRPG/Saves/Config", "w");
 
 	version = CONFIG_VERSION;
 	File_writeInt(rw, version);
@@ -2020,18 +2059,18 @@ void Game_saveState(Game_t* game, int mapId, int x, int y, int angleDir, boolean
 	DoomCanvas_updateLoadingBar(game->doomRpg->doomCanvas);
 	Game_saveConfig(game, z);
 	DoomCanvas_updateLoadingBar(game->doomRpg->doomCanvas);
-	Game_savePlayerState(game, "Player2", game->mapFiles[mapId-1], x, y, angleDir);
+	Game_savePlayerState(game, "/switch/DoomRPG/Saves/Player2", game->mapFiles[mapId-1], x, y, angleDir);
 	DoomCanvas_updateLoadingBar(game->doomRpg->doomCanvas);
 	Game_saveWorldState(game);
 	if (!z) {
 		if (game->newMapName && SDL_strcmp(game->newMapName, "")) {
 			DoomCanvas_updateLoadingBar(game->doomRpg->doomCanvas);
-			Game_savePlayerState(game, "Player", game->newMapName, game->newDestX, game->newDestY, game->newAngle);
+			Game_savePlayerState(game, "/switch/DoomRPG/Saves/Player", game->newMapName, game->newDestX, game->newDestY, game->newAngle);
 			game->newMapName[0] = '\0';
 		}
 		else {
 			DoomCanvas_updateLoadingBar(game->doomRpg->doomCanvas);
-			Game_savePlayerState(game, "Player", "/junction.bsp", 0, 0, 0);
+			Game_savePlayerState(game, "/switch/DoomRPG/Saves/Player", "/junction.bsp", 0, 0, 0);
 		}
 	}
 }
@@ -2045,7 +2084,7 @@ void Game_saveWorldState(Game_t* game)
 	GameSprite_t* gSprite;
 	int i, j;
 
-	rw = SDL_RWFromFile("World", "wb");
+	rw = SDL_RWFromFile("/switch/DoomRPG/Saves/World", "wb");
 
 	// Map Entities
 	File_writeInt(rw, game->numEntities);

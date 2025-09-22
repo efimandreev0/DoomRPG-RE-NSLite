@@ -5,6 +5,9 @@
 
 #include "DoomRPG.h"
 #include "EntityDef.h"
+
+#include <switch/services/set.h>
+
 #include "SDL_Video.h"
 
 EntityDefManager_t* EntityDef_init(EntityDefManager_t* entityDef, DoomRPG_t* doomRpg)
@@ -62,7 +65,15 @@ int EntityDef_startup(EntityDefManager_t* entityDef)
 	EntityDef_t* list;
 	int dataPos, i;
 
-	fData = DoomRPG_fileOpenRead(entityDef->doomRpg, "/entities.db");
+	u64 LanguageCode=0;
+	setInitialize();
+	setGetSystemLanguage(&LanguageCode);
+	if (strstr((char*)&LanguageCode, "ru")) {
+    	fData = DoomRPG_fileOpenRead(entityDef->doomRpg, "/entities_ru.db");
+    }
+    else{
+    	fData = DoomRPG_fileOpenRead(entityDef->doomRpg, "/entities.db");
+    }
 
 	dataPos = 0;
 	entityDef->numDefs = DoomRPG_shortAtNext(fData, &dataPos);

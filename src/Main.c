@@ -12,8 +12,49 @@
 #include "MenuSystem.h"
 #include "SDL_Video.h"
 #include "Z_Zip.h"
+#ifdef __aarch64__
+#include <string.h>
+#include <stdio.h>
+#include <errno.h>
+#include "logger.h"
+
+#include <switch.h>
+#endif
 
 extern DoomRPG_t* doomRpg;
+void printfile(const char* path)
+{
+	FILE* f = fopen(path, "r");
+	if (f) {
+		char mystring[100];
+		while (fgets(mystring, sizeof(mystring), f)) {
+			int a = strlen(mystring);
+			if (mystring[a-1] == '\n') {
+				mystring[a-1] = 0;
+				if (mystring[a-2] == '\r')
+				{
+					char mystring[100];
+					while (fgets(mystring, sizeof(mystring), f))
+					{
+						int a = strlen(mystring);
+						if (mystring[a-1] == '\n')
+						{
+							mystring[a-1] = 0;
+							if (mystring[a-2] == '\r')
+								mystring[a-2] = 0;
+						}
+						puts(mystring);
+					}
+					printf(">>EOF<<\n");
+					fclose(f);
+				} else {
+					printf("errno is %d, %s\n", errno, strerror(errno));
+				}
+			}
+		}
+	}
+}
+
 int main(int argc, char* args[])
 {
 	SDL_Event ev;
@@ -24,8 +65,7 @@ int main(int argc, char* args[])
 	Z_Init();
 	SDL_InitVideo();
 	SDL_InitAudio();
-
-	openZipFile("DoomRPG.zip", &zipFile);
+	//openZipFile("sdmc:/switch/DoomRPG.zip", &zipFile);
 
 	/*int size;
 	byte* data;
@@ -45,16 +85,38 @@ int main(int argc, char* args[])
 	}
 
 	//Hud_addMessage(doomRpg->hud, "Bienvenido a Doom RPG por GEC...");
+#ifdef __aarch64__
+	padConfigureInput(1, HidNpadStyleSet_NpadStandard);
 
-	const Uint8* state = SDL_GetKeyboardState(NULL);
+	// Initialize the default gamepad (which reads handheld mode inputs as well as the first connected controller)
+	PadState pad;
+	padInitializeDefault(&pad);
+	u64 kDown = padGetButtonsDown(&pad);
+#else
+	const Uint8* state = (const Uint8*)SDL_GameControllerGetButtonID();
+#endif
 
 	key = 0;
 	oldKey = -1;
-	
-	
-	while (doomRpg->closeApplet != true)
-	{
 
+#ifdef __aarch64__
+	//logger_init();
+	//logger_write("Reached main loop.");
+	Result rc = fsdevMountSdmc();
+	if (R_FAILED(rc))
+		printf("romfsInit: %08X\n", rc);
+	else
+	{
+		printf("romfs Init Successful!\n");
+	}
+#endif
+	
+	while (doomRpg->closeApplet != true
+		#ifdef __aarch64__
+	&& appletMainLoop()
+#endif
+	)
+	{
 		int currentTimeMillis = DoomRPG_GetUpTimeMS();
 
 		mouse_Button = MOUSE_BUTTON_INVALID;
@@ -145,7 +207,9 @@ int main(int argc, char* args[])
 						SDL_Log("Window %d closed", ev.window.windowID);
 						closeZipFile(&zipFile);
 						DoomRPG_FreeAppData(doomRpg);
+#ifndef __aarch64__
 						SDL_CloseAudio();
+#endif
 						SDL_Close();
 						exit(0);
 						break;
@@ -169,7 +233,13 @@ int main(int argc, char* args[])
 				}
 			}
 
-			key = DoomRPG_getEventKey(mouse_Button, state);
+			key = DoomRPG_getEventKey(mouse_Button,
+#ifdef __aarch64__
+			pad
+#else
+			state
+#endif
+			);
 			if (key != oldKey) {
 				//printf("oldKey %d\n", oldKey);
 				//printf("key %d\n", key);
@@ -185,7 +255,7 @@ int main(int argc, char* args[])
 			else if (key == 0) {
 			setBind:
 				if (doomRpg->menuSystem->setBind) {
-					DoomRPG_setBind(doomRpg, mouse_Button, state);
+					//DoomRPG_setBind(doomRpg, mouse_Button, state);
 				}
 			}
 		}
@@ -198,7 +268,9 @@ int main(int argc, char* args[])
 
 	closeZipFile(&zipFile);
 	DoomRPG_FreeAppData(doomRpg);
+#ifndef __aarch64__
 	SDL_CloseAudio();
+#endif
 	SDL_Close();
 
 	return 0;

@@ -4,15 +4,18 @@
 #include <SDL.h>
 #include <SDL_mixer.h>
 #include <stdio.h>
+#ifndef __aarch64__
 #include <fluidsynth.h>
-
+#endif
 #include "DoomRPG.h"
 #include "Game.h"
 #include "SDL_Video.h"
 
 SDLVideo_t sdlVideo;
 SDLController_t sdlController;
+#ifndef __aarch64__
 FluidSynth_t fluidSynth;
+#endif
 
 SDLVidModes_t sdlVideoModes[14] =
 {
@@ -42,18 +45,21 @@ void SDL_InitVideo(void)
 
 	// Default
 	sdlVideo.fullScreen = false;
-	sdlVideo.vSync = false;
+	sdlVideo.vSync = true;
 	sdlVideo.integerScaling = true;
-	sdlVideo.resolutionIndex = 8;
-	sdlVideo.displaySoftKeys = true;
+	sdlVideo.resolutionIndex = 10;
+	sdlVideo.displaySoftKeys = false;
 
 	Game_loadConfig(NULL);
 
 	SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
-    if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
+    if (SDL_Init(SDL_INIT_EVERYTHING
+#ifdef __aarch64__
+    | SDL_INIT_GAMECONTROLLER
+#endif
+    ) < 0) {
         DoomRPG_Error("Could not initialize SDL: %s", SDL_GetError());
     }
-
     flags = SDL_WINDOW_OPENGL| SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
     video_w = sdlVideoModes[sdlVideo.resolutionIndex].width;
     video_h = sdlVideoModes[sdlVideo.resolutionIndex].height;
@@ -100,51 +106,43 @@ void SDL_InitVideo(void)
 	sdlController.gGameController = NULL;
 	sdlController.gJoystick = NULL;
 	sdlController.gJoyHaptic = NULL;
-	sdlController.deadZoneLeft = 25;
-	sdlController.deadZoneRight = 25;
+	sdlController.deadZoneLeft = 10;
+	sdlController.deadZoneRight = 10;
 
-	if (SDL_NumJoysticks() < 1) {
-		printf("Warning: No joysticks connected!\n");
-	}
-	else {
-		printf("Joysticks connected: %d\n", SDL_NumJoysticks());
+	sdlController.gGameController = SDL_GameControllerOpen(0);
+	if (sdlController.gGameController) {
 
-		// Open game controller and check if it supports rumble
-		sdlController.gGameController = SDL_GameControllerOpen(0);
-		if (sdlController.gGameController) {
-
-			// Check if joystick supports Rumble
-			if (!SDL_GameControllerHasRumble(sdlController.gGameController)) {
-				printf("Warning: Game controller does not have rumble! SDL Error: %s\n", SDL_GetError());
-			}
+		// Check if joystick supports Rumble
+		if (!SDL_GameControllerHasRumble(sdlController.gGameController)) {
+			printf("Warning: Game controller does not have rumble! SDL Error: %s\n", SDL_GetError());
 		}
+	}
 
-		// Load joystick if game controller could not be loaded
-		if (sdlController.gGameController == NULL) {
-			// Open first joystick
-			sdlController.gJoystick = SDL_JoystickOpen(0);
-			if (sdlController.gJoystick == NULL) {
-				printf("Warning: Unable to open joystick! SDL Error: %s\n", SDL_GetError());
+	// Load joystick if game controller could not be loaded
+	if (sdlController.gGameController == NULL) {
+		// Open first joystick
+		sdlController.gJoystick = SDL_JoystickOpen(0);
+		if (sdlController.gJoystick == NULL) {
+			printf("Warning: Unable to open joystick! SDL Error: %s\n", SDL_GetError());
+		}
+		else
+		{
+			// Check if joystick supports haptic
+			if (!SDL_JoystickIsHaptic(sdlController.gJoystick)) {
+				printf("Warning: Controller does not support haptics! SDL Error: %s\n", SDL_GetError());
 			}
 			else
 			{
-				// Check if joystick supports haptic
-				if (!SDL_JoystickIsHaptic(sdlController.gJoystick)) {
-					printf("Warning: Controller does not support haptics! SDL Error: %s\n", SDL_GetError());
+				// Get joystick haptic device
+				sdlController.gJoyHaptic = SDL_HapticOpenFromJoystick(sdlController.gJoystick);
+				if (sdlController.gJoyHaptic == NULL) {
+					printf("Warning: Unable to get joystick haptics! SDL Error: %s\n", SDL_GetError());
 				}
 				else
 				{
-					// Get joystick haptic device
-					sdlController.gJoyHaptic = SDL_HapticOpenFromJoystick(sdlController.gJoystick);
-					if (sdlController.gJoyHaptic == NULL) {
-						printf("Warning: Unable to get joystick haptics! SDL Error: %s\n", SDL_GetError());
-					}
-					else
-					{
-						// Initialize rumble
-						if (SDL_HapticRumbleInit(sdlController.gJoyHaptic) < 0) {
-							printf("Warning: Unable to initialize haptic rumble! SDL Error: %s\n", SDL_GetError());
-						}
+					// Initialize rumble
+					if (SDL_HapticRumbleInit(sdlController.gJoyHaptic) < 0) {
+						printf("Warning: Unable to initialize haptic rumble! SDL Error: %s\n", SDL_GetError());
 					}
 				}
 			}
@@ -243,7 +241,7 @@ void SDL_RenderDrawCircle(SDL_Renderer* renderer, int x, int y, int r)
 	}
 }
 
-
+#ifndef __aarch64__
 //---------------
 void SDL_InitAudio(void)
 {
@@ -282,7 +280,6 @@ void SDL_InitAudio(void)
 		DoomRPG_Error("Could not initialize SDL Mixer: %s", Mix_GetError());
 	}
 }
-
 void SDL_CloseAudio(void) {
 
 	delete_fluid_audio_driver(fluidSynth.adriver);
@@ -291,7 +288,16 @@ void SDL_CloseAudio(void) {
 
 	Mix_Quit();
 }
+#else
+void SDL_InitAudio(void)
+{
+	printf("SDL_InitAudio\n");
 
+	if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+		DoomRPG_Error("Could not initialize SDL Mixer: %s", Mix_GetError());
+	}
+}
+#endif
 //--------------------
 
 int SDL_GameControllerGetButtonID(void)
