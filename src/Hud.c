@@ -234,44 +234,24 @@ void Hud_drawBottomBar(Hud_t* hud)
     }
 
     // draw orientation text
-    u64 LanguageCode=0;
-    setInitialize();
-    setGetSystemLanguage(&LanguageCode);
-    if (strstr((char*)&LanguageCode, "ru")) {
-        switch (doomCanvas->destAngle & 255) {
-            case 0:
-                strncpy(dir, "Â", sizeof(dir));
-                break;
-            case 128:
-                strncpy(dir, "Ç", sizeof(dir));
-                break;
-            case 192:
-                strncpy(dir, "Þ", sizeof(dir));
-                break;
-            default:
-                strncpy(dir, "Ñ", sizeof(dir));
-                break;
-        }
-    }
-    else {
-        switch (doomCanvas->destAngle & 255) {
-            case 0:
-                strncpy(dir, "E", sizeof(dir));
-                break;
-            case 128:
-                strncpy(dir, "W", sizeof(dir));
-                break;
-            case 192:
-                strncpy(dir, "S", sizeof(dir));
-                break;
-            default:
-                strncpy(dir, "N", sizeof(dir));
-                break;
-        }
+    switch (doomCanvas->destAngle & 255) {
+        case 0:
+            strncpy(dir, hud->doomRpg->sysStrings[STRING_E], sizeof(dir)); //STRING_E //hud->doomRpg->sysStrings[STRING_E]
+            break;
+        case 128:
+            strncpy(dir, hud->doomRpg->sysStrings[STRING_W], sizeof(dir)); //STRING_W //hud->doomRpg->sysStrings[STRING_W]
+            break;
+        case 192:
+            strncpy(dir, hud->doomRpg->sysStrings[STRING_S], sizeof(dir)); //STRING_S //hud->doomRpg->sysStrings[STRING_S]
+            break;
+        default:
+            strncpy(dir, hud->doomRpg->sysStrings[STRING_N2], sizeof(dir)); //STRING_N2 //hud->doomRpg->sysStrings[STRING_N2]
+            break;
     }
 
     DoomCanvas_drawImage(doomCanvas, &hud->imgStatusArrow, hud->statusOrientationArrowXpos + cx, y - 3, 9);
     DoomCanvas_drawFont(doomCanvas, dir, hud->statusOrientationXpos + cx, y + 2, 9, 0, 1, hud->largeHud);
+
 }
 
 void Hud_drawEffects(Hud_t* hud)

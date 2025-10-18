@@ -96,33 +96,16 @@ Game_t* Game_init(Game_t* game, DoomRPG_t* doomRpg)
 	strncpy(game->mapNames[MAPNAME_JUNCTION_DESTROYED], "Junction", 24);
 	strncpy(game->mapNames[MAPNAME_REACTOR], "Reactor", 24);
 
-	u64 LanguageCode=0;
-	setInitialize();
-	setGetSystemLanguage(&LanguageCode);
-	if (strstr((char*)&LanguageCode, "ru")) {
-		strncpy(game->mapFiles[MAPFILE_INTRO], "/intro_ru.bsp", 24);
-		strncpy(game->mapFiles[MAPFILE_L01], "/level01_ru.bsp", 24);
-		strncpy(game->mapFiles[MAPFILE_L02], "/level02_ru.bsp", 24);
-		strncpy(game->mapFiles[MAPFILE_L03], "/level03_ru.bsp", 24);
-		strncpy(game->mapFiles[MAPFILE_L04], "/level04_ru.bsp", 24);
-		strncpy(game->mapFiles[MAPFILE_L05], "/level05_ru.bsp", 24);
-		strncpy(game->mapFiles[MAPFILE_L06], "/level06_ru.bsp", 24);
-		strncpy(game->mapFiles[MAPFILE_L07], "/level07_ru.bsp", 24);
-		strncpy(game->mapFiles[MAPFILE_JUNCTION], "/junction_ru.bsp", 24);
-		strncpy(game->mapFiles[MAPFILE_JUNCTION_DESTROYED], "/junction_destroyed_ru.bsp", 24);
-	}
-	else{
-		strncpy(game->mapFiles[MAPFILE_INTRO], "/intro.bsp", 24);
-		strncpy(game->mapFiles[MAPFILE_L01], "/level01.bsp", 24);
-		strncpy(game->mapFiles[MAPFILE_L02], "/level02.bsp", 24);
-		strncpy(game->mapFiles[MAPFILE_L03], "/level03.bsp", 24);
-		strncpy(game->mapFiles[MAPFILE_L04], "/level04.bsp", 24);
-		strncpy(game->mapFiles[MAPFILE_L05], "/level05.bsp", 24);
-		strncpy(game->mapFiles[MAPFILE_L06], "/level06.bsp", 24);
-		strncpy(game->mapFiles[MAPFILE_L07], "/level07.bsp", 24);
-		strncpy(game->mapFiles[MAPFILE_JUNCTION], "/junction.bsp", 24);
-		strncpy(game->mapFiles[MAPFILE_JUNCTION_DESTROYED], "/junction_destroyed.bsp", 24);
-	}
+	strncpy(game->mapFiles[MAPFILE_INTRO], "/intro.bsp", 24);
+	strncpy(game->mapFiles[MAPFILE_L01], "/level01.bsp", 24);
+	strncpy(game->mapFiles[MAPFILE_L02], "/level02.bsp", 24);
+	strncpy(game->mapFiles[MAPFILE_L03], "/level03.bsp", 24);
+	strncpy(game->mapFiles[MAPFILE_L04], "/level04.bsp", 24);
+	strncpy(game->mapFiles[MAPFILE_L05], "/level05.bsp", 24);
+	strncpy(game->mapFiles[MAPFILE_L06], "/level06.bsp", 24);
+	strncpy(game->mapFiles[MAPFILE_L07], "/level07.bsp", 24);
+	strncpy(game->mapFiles[MAPFILE_JUNCTION], "/junction.bsp", 24);
+	strncpy(game->mapFiles[MAPFILE_JUNCTION_DESTROYED], "/junction_destroyed.bsp", 24);
 	strncpy(game->mapFiles[MAPFILE_ITEMS], "/items.bsp", 24);
 	strncpy(game->mapFiles[MAPFILE_REACTOR], "/reactor.bsp", 24);
 	strncpy(game->mapFiles[MAPFILE_END_GAME], "/endgame.bsp", 24);
@@ -383,29 +366,15 @@ void Game_hurtEntityAt(Game_t* game, int i, int i2, int i3, int i4, int z, int z
 				}
 
 				Entity_pain(entity, i3, i4);
-				u64 LanguageCode=0;
-				setInitialize();
-				setGetSystemLanguage(&LanguageCode);
-				if (strstr((char*)&LanguageCode, "ru")) {
-					if (CombatEntity_getHealth(&entity->monster->ce) <= 0) {
-						SDL_snprintf(text, sizeof(text), "%s получил %d урона! %s умер!", entity->def->name, (i3 + i4), entity->def->name);
+
+				if (CombatEntity_getHealth(&entity->monster->ce) <= 0) {
+						SDL_snprintf(text, sizeof(text), game->doomRpg->sysStrings[STRING_TOOKDAMAGEDIED], entity->def->name, (i3 + i4), entity->def->name); //STRING_TOOKDAMAGE
 						Hud_addMessage(game->doomRpg->hud, text);
 						Entity_died(entity);
 						return;
 					}
-					SDL_snprintf(text, sizeof(text), "%s получил %d урона!", entity->def->name, (i3 + i4));
+					SDL_snprintf(text, sizeof(text), game->doomRpg->sysStrings[STRING_TOOKDAMAGE], entity->def->name, (i3 + i4));
 					Hud_addMessage(game->doomRpg->hud, text);
-				}
-				else{
-					if (CombatEntity_getHealth(&entity->monster->ce) <= 0) {
-						SDL_snprintf(text, sizeof(text), "%s took %d damage! %s died!", entity->def->name, (i3 + i4), entity->def->name);
-						Hud_addMessage(game->doomRpg->hud, text);
-						Entity_died(entity);
-						return;
-					}
-					SDL_snprintf(text, sizeof(text), "%s took %d damage!", entity->def->name, (i3 + i4));
-					Hud_addMessage(game->doomRpg->hud, text);
-				}
 
 				// Pain Sound
 				soundId = EntityMonster_getSoundRnd(entity->monster, 6);

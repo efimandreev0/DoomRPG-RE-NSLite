@@ -22,8 +22,6 @@
 #include "Combat.h"
 #include "SDL_Video.h"
 
-static char processing[] = "Processing...";
-static char justAMoment[] = "(Just a moment!)";
 
 #define MOVEFORWARD	1
 #define MOVEBACK	2
@@ -234,7 +232,7 @@ void DoomCanvas_setupmenu(DoomCanvas_t* doomCanvas, boolean notdrawLoading)
 	if (notdrawLoading == false) {
 		DoomRPG_setColor(doomCanvas->doomRpg, 0x000000);
 		DoomRPG_fillRect(doomCanvas->doomRpg, 0, 0, doomCanvas->displayRect.w, doomCanvas->displayRect.h);
-		DoomCanvas_drawString1(doomCanvas, "Loading...", doomCanvas->SCR_CX, doomCanvas->SCR_CY + -0x18, 0x11);
+		DoomCanvas_drawString1(doomCanvas, doomCanvas->doomRpg->sysStrings[STRING_LOADING], doomCanvas->SCR_CX, doomCanvas->SCR_CY + -0x18, 0x11);
 		DoomRPG_flushGraphics(doomCanvas->doomRpg);
 	}
 
@@ -323,7 +321,7 @@ void DoomCanvas_captureDogState(DoomCanvas_t* doomCanvas)
 			doomCanvas->captureTime = doomCanvas->time + 500;
 			break;
 		case 2:
-			SDL_snprintf(doomCanvas->printMsg, sizeof(doomCanvas->printMsg), "You captured|the %s!|", entity->def->name);
+			SDL_snprintf(doomCanvas->printMsg, sizeof(doomCanvas->printMsg), doomCanvas->doomRpg->sysStrings[STRING_YOUCAPT], entity->def->name); //STRING_YOUCAPT
 			doomCanvas->game->tileEvent = 0;
 			DoomCanvas_startDialog(doomCanvas, doomCanvas->printMsg, false);
 			doomCanvas->captureState = 0;
@@ -1088,28 +1086,14 @@ void DoomCanvas_drawEpilogue(DoomCanvas_t* doomCanvas)
 		DoomCanvas_scrollSpaceBG(doomCanvas);
 		DoomCanvas_drawString2(doomCanvas, doomCanvas->epilogueText[doomCanvas->epilogueTextPage], 
 			doomCanvas->SCR_CX - 64, doomCanvas->SCR_CY - 64, 0, (doomCanvas->showTextDone != 0) ? -1 : doomCanvas->epilogueTextTime);
-		u64 LanguageCode=0;
-		setInitialize();
-		setGetSystemLanguage(&LanguageCode);
-		if (strstr((char*)&LanguageCode, "ru")) {
-			if (doomCanvas->epilogueTextPage < 1) {
-				DoomCanvas_drawImage(doomCanvas, &doomCanvas->menuSystem->imgHand, (doomCanvas->SCR_CX + 36) - 4, doomCanvas->SCR_CY + 64, 10);
-				DoomCanvas_drawString1(doomCanvas, "Дальше", (doomCanvas->SCR_CX + 64) - 4, doomCanvas->SCR_CY + 64, 10);
-			}
-			else {
-				DoomCanvas_drawImage(doomCanvas, &doomCanvas->menuSystem->imgHand, (doomCanvas->SCR_CX + 8) - 4, doomCanvas->SCR_CY + 64, 10);
-				DoomCanvas_drawString1(doomCanvas, "Продолжить", (doomCanvas->SCR_CX + 64) - 4, doomCanvas->SCR_CY + 64, 10);
-			}
+
+		if (doomCanvas->epilogueTextPage < 1) {
+			DoomCanvas_drawImage(doomCanvas, &doomCanvas->menuSystem->imgHand, (doomCanvas->SCR_CX + 36) - 4, doomCanvas->SCR_CY + 64, 10);
+			DoomCanvas_drawString1(doomCanvas, doomCanvas->doomRpg->sysStrings[STRING_MORE], (doomCanvas->SCR_CX + 64) - 4, doomCanvas->SCR_CY + 64, 10); //STRING_MORE
 		}
 		else {
-			if (doomCanvas->epilogueTextPage < 1) {
-				DoomCanvas_drawImage(doomCanvas, &doomCanvas->menuSystem->imgHand, (doomCanvas->SCR_CX + 36) - 4, doomCanvas->SCR_CY + 64, 10);
-				DoomCanvas_drawString1(doomCanvas, "More", (doomCanvas->SCR_CX + 64) - 4, doomCanvas->SCR_CY + 64, 10);
-			}
-			else {
-				DoomCanvas_drawImage(doomCanvas, &doomCanvas->menuSystem->imgHand, (doomCanvas->SCR_CX + 8) - 4, doomCanvas->SCR_CY + 64, 10);
-				DoomCanvas_drawString1(doomCanvas, "Continue", (doomCanvas->SCR_CX + 64) - 4, doomCanvas->SCR_CY + 64, 10);
-			}
+			DoomCanvas_drawImage(doomCanvas, &doomCanvas->menuSystem->imgHand, (doomCanvas->SCR_CX + 8) - 4, doomCanvas->SCR_CY + 64, 10);
+			DoomCanvas_drawString1(doomCanvas, doomCanvas->doomRpg->sysStrings[STRING_CONTINUE], (doomCanvas->SCR_CX + 64) - 4, doomCanvas->SCR_CY + 64, 10);
 		}
 
 		if ((doomCanvas->time - doomCanvas->epilogueTextTime) > (((int) SDL_strlen(doomCanvas->epilogueText[doomCanvas->epilogueTextPage]) * 25))) {
@@ -1171,28 +1155,13 @@ void DoomCanvas_drawStory(DoomCanvas_t* doomCanvas)
 			else {
 				DoomCanvas_drawString2(doomCanvas, text[doomCanvas->storyTextPage], doomCanvas->SCR_CX -64,doomCanvas->SCR_CY - 64, 0, doomCanvas->storyTextTime);
 			}
-			u64 LanguageCode=0;
-			setInitialize();
-			setGetSystemLanguage(&LanguageCode);
-			if (strstr((char*)&LanguageCode, "ru")) {
-				if (doomCanvas->storyTextPage < iVar1 - 1) {
-					DoomCanvas_drawImage(doomCanvas, &doomCanvas->doomRpg->menuSystem->imgHand, (doomCanvas->SCR_CX + 36) - 4, (doomCanvas->SCR_CY + 64) - 2, 10);
-					DoomCanvas_drawString1(doomCanvas, "Дальше", (doomCanvas->SCR_CX + 64) - 4, (doomCanvas->SCR_CY + 64), 10);
-				}
-				else {
-					DoomCanvas_drawImage(doomCanvas, &doomCanvas->doomRpg->menuSystem->imgHand, (doomCanvas->SCR_CX + 8) - 4, (doomCanvas->SCR_CY + 64) - 2, 10);
-					DoomCanvas_drawString1(doomCanvas, "Продолжить", (doomCanvas->SCR_CX + 64) - 4, (doomCanvas->SCR_CY + 64), 10);
-				}
+			if (doomCanvas->storyTextPage < iVar1 - 1) {
+				DoomCanvas_drawImage(doomCanvas, &doomCanvas->doomRpg->menuSystem->imgHand, (doomCanvas->SCR_CX + 36) - 4, (doomCanvas->SCR_CY + 64) - 2, 10);
+				DoomCanvas_drawString1(doomCanvas, doomCanvas->doomRpg->sysStrings[STRING_MORE], (doomCanvas->SCR_CX + 64) - 4, (doomCanvas->SCR_CY + 64), 10);
 			}
 			else {
-				if (doomCanvas->storyTextPage < iVar1 - 1) {
-					DoomCanvas_drawImage(doomCanvas, &doomCanvas->doomRpg->menuSystem->imgHand, (doomCanvas->SCR_CX + 36) - 4, (doomCanvas->SCR_CY + 64) - 2, 10);
-					DoomCanvas_drawString1(doomCanvas, "More", (doomCanvas->SCR_CX + 64) - 4, (doomCanvas->SCR_CY + 64), 10);
-				}
-				else {
-					DoomCanvas_drawImage(doomCanvas, &doomCanvas->doomRpg->menuSystem->imgHand, (doomCanvas->SCR_CX + 8) - 4, (doomCanvas->SCR_CY + 64) - 2, 10);
-					DoomCanvas_drawString1(doomCanvas, "Continue", (doomCanvas->SCR_CX + 64) - 4, (doomCanvas->SCR_CY + 64), 10);
-				}
+				DoomCanvas_drawImage(doomCanvas, &doomCanvas->doomRpg->menuSystem->imgHand, (doomCanvas->SCR_CX + 8) - 4, (doomCanvas->SCR_CY + 64) - 2, 10);
+				DoomCanvas_drawString1(doomCanvas, doomCanvas->doomRpg->sysStrings[STRING_CONTINUE], (doomCanvas->SCR_CX + 64) - 4, (doomCanvas->SCR_CY + 64), 10);
 			}
 
 			if (i2 > ((int)SDL_strlen(text[doomCanvas->storyTextPage]) * 25)) {
@@ -1583,7 +1552,7 @@ void DoomCanvas_sorryState(DoomCanvas_t* doomCanvas)
 	DoomRPG_setClipTrue(doomCanvas->doomRpg, doomCanvas->SCR_CX - 64, doomCanvas->SCR_CY - 64, 128, 128);
 	DoomCanvas_scrollSpaceBG(doomCanvas);
 
-	DoomCanvas_drawString2(doomCanvas, "Sorry!", doomCanvas->SCR_CX - 64, doomCanvas->SCR_CY - 64, 0, -1);
+	DoomCanvas_drawString2(doomCanvas, doomCanvas->doomRpg->sysStrings[STRING_SORRY], doomCanvas->SCR_CX - 64, doomCanvas->SCR_CY - 64, 0, -1); //STRING_SORRY
 	DoomCanvas_drawString2(doomCanvas, doomCanvas->printMsg, doomCanvas->SCR_CX - 64, doomCanvas->SCR_CY - 40, 0, -1);
 }
 
@@ -2146,15 +2115,7 @@ void DoomCanvas_handlePlayingEvents(DoomCanvas_t* doomCanvas, int i)
 				Player_fireWeapon(doomCanvas->doomRpg->player, ent);
 			}
 			else {
-				u64 LanguageCode=0;
-				setInitialize();
-				setGetSystemLanguage(&LanguageCode);
-				if (strstr((char*)&LanguageCode, "ru")) {
-					Hud_addMessage(doomCanvas->hud, "Нечего использовать");
-				}
-				else {
-					Hud_addMessage(doomCanvas->hud, "Nothing to use");
-				}
+				Hud_addMessage(doomCanvas->hud, doomCanvas->doomRpg->sysStrings[STRING_NTU]); //STRING_NTU
 				Sound_playSound(doomCanvas->doomRpg->sound, 5065, 0, 2);
 			}
 		}
@@ -2166,15 +2127,7 @@ void DoomCanvas_handlePlayingEvents(DoomCanvas_t* doomCanvas, int i)
 	}
 
 	case PASSTURN: {
-		u64 LanguageCode=0;
-		setInitialize();
-		setGetSystemLanguage(&LanguageCode);
-		if (strstr((char*)&LanguageCode, "ru")) {
-			Hud_addMessage(doomCanvas->hud, "Ход пропущен.");
-		}
-		else {
-			Hud_addMessage(doomCanvas->hud, "Turn passed.");
-		}
+		Hud_addMessage(doomCanvas->hud, doomCanvas->doomRpg->sysStrings[STRING_TPS]); //STRING_TPS
 		Game_touchTile(doomCanvas->game, doomCanvas->destX, doomCanvas->destY, false);
 		Game_advanceTurn(doomCanvas->game);
 		break;
@@ -2201,15 +2154,7 @@ void DoomCanvas_handlePlayingEvents(DoomCanvas_t* doomCanvas, int i)
 
 void DoomCanvas_initCredits(DoomCanvas_t* doomCanvas)
 {
-	u64 LanguageCode=0;
-	setInitialize();
-	setGetSystemLanguage(&LanguageCode);
-	if (strstr((char*)&LanguageCode, "ru")) {
-		DoomRPG_createImage(doomCanvas->doomRpg, "c.bmp", 0, &doomCanvas->imgSpaceBG);
-	}
-	else {
-		DoomRPG_createImage(doomCanvas->doomRpg, "c.bmp", 0, &doomCanvas->imgSpaceBG);
-	}
+	DoomRPG_createImage(doomCanvas->doomRpg, "c.bmp", 0, &doomCanvas->imgSpaceBG);
 	doomCanvas->creditsTextTime = -1;
 }
 
@@ -2223,153 +2168,41 @@ void DoomCanvas_loadEpilogueText(DoomCanvas_t* doomCanvas)
 	overall = DoomCanvas_getOverall(doomCanvas);
 
 	SDL_memset(rank, 0, sizeof(rank));
-	u64 LanguageCode=0;
-	setInitialize();
-	setGetSystemLanguage(&LanguageCode);
-	if (strstr((char*)&LanguageCode, "ru")) {
-		if (overall >= 80) {
-			strncpy(rank, "Мастер", sizeof(rank));
-			strncpy(doomCanvas->epilogueText[1],
-				"Вы нашли каждый\n"
-				"секрет и убили\n"
-				"каждого монстра\n"
-				"в этой игре.\n"
-				"Это заслуживает\n"
-				"уважения!\n"
-				"Пожалуйста, посетите:\n"
-				"\n"
-				"doomrpg.com/sarge\n"
-				, sizeof(*doomCanvas->epilogueText));
-		}
-		else if (overall >= 70) {
-			strncpy(rank, "Плохиш", sizeof(rank));
-			strncpy(doomCanvas->epilogueText[1],
-				"Отличная работа,\n"
-				"до ранга мастера\n"
-				"осталось совсем\n"
-				"немного. А для\n"
-				"таких как вы у\n"
-				"нас проходит\n"
-				"парад на:\n"
-				"\n"
-				"doomrpg.com/blues\n"
-				, sizeof(*doomCanvas->epilogueText));
-		}
-		else if (overall >= 50) {
-			strncpy(rank, "Среднячок", sizeof(rank));
-			strncpy(doomCanvas->epilogueText[1],
-				"Вы победили мон-\n"
-				"стров из ада, но\n"
-				"мы видели и луч-\n"
-				"ших игроков. Смот-\n"
-				"рите больше на:\n"
-				"\n"
-				"doomrpg.com/spire\n"
-				, sizeof(*doomCanvas->epilogueText));
-		}
-		else {
-			strncpy(rank, "Болван", sizeof(rank));
-			strncpy(doomCanvas->epilogueText[1],
-				"Вы закончили игру\n"
-				"еле-еле душа в теле.\n"
-				"Здесь всё ещё много\n"
-				"что есть для иссле-\n"
-				"дования. Чтобы пройти\n"
-				"лучше посетите в\n"
-				"следующий раз:\n"
-				"\n"
-				"doomrpg.com/hound\n"
-				, sizeof(*doomCanvas->epilogueText));
-		}
 
-		SDL_snprintf(doomCanvas->epilogueText[0], sizeof(*doomCanvas->epilogueText),
-			"Поздравляем!\n"
-			"Вы закрыли портал\n"
-			"в ад и остано-\n"
-			"вили вторжение\n"
-			"демонов на нашу\n"
-			"планету.\n"
-			"\n"
-			"Ваш ранг: %s", rank);
-
-		DoomRPG_createImage(doomCanvas->doomRpg, "c.bmp", false, &doomCanvas->imgSpaceBG);
+	if (overall >= 80) {
+		strncpy(rank, doomCanvas->doomRpg->sysStrings[STRING_RANKM], sizeof(rank)); //STRING_RANKM
+		strncpy(doomCanvas->epilogueText[1],
+			doomCanvas->doomRpg->sysStrings[STRING_YHF]//STRING_YHF
+			, sizeof(*doomCanvas->epilogueText));
+	}
+	else if (overall >= 70) {
+		strncpy(rank, doomCanvas->doomRpg->sysStrings[STRING_RANKB], sizeof(rank)); //STRING_RANKB
+		strncpy(doomCanvas->epilogueText[1],
+			doomCanvas->doomRpg->sysStrings[STRING_NJT] //STRING_NJT
+			, sizeof(*doomCanvas->epilogueText));
+	}
+	else if (overall >= 50) {
+		strncpy(rank, doomCanvas->doomRpg->sysStrings[STRING_RANKA], sizeof(rank)); //STRING_RANKA
+		strncpy(doomCanvas->epilogueText[1],
+			doomCanvas->doomRpg->sysStrings[STRING_YBT] //STRING_YBT
+			, sizeof(*doomCanvas->epilogueText));
 	}
 	else {
-		if (overall >= 80) {
-			strncpy(rank, "Master", sizeof(rank));
-			strncpy(doomCanvas->epilogueText[1],
-				"You have found\n"
-				"every secret and\n"
-				"killed every mon-\n"
-				"ster in the game.\n"
-				"This calls for a\n"
-				"celebration!\n"
-				"Please visit:\n"
-				"\n"
-				"doomrpg.com/sarge\n"
-				, sizeof(*doomCanvas->epilogueText));
-		}
-		else if (overall >= 70) {
-			strncpy(rank, "Baddy", sizeof(rank));
-			strncpy(doomCanvas->epilogueText[1],
-				"Nice job. There\n"
-				"is only a little\n"
-				"more you need to\n"
-				"do to achieve\n"
-				"Master rank. We\n"
-				"have a parade\n"
-				"for you at:\n"
-				"\n"
-				"doomrpg.com/blues\n"
-				, sizeof(*doomCanvas->epilogueText));
-		}
-		else if (overall >= 50) {
-			strncpy(rank, "Average", sizeof(rank));
-			strncpy(doomCanvas->epilogueText[1],
-				"You've beaten the\n"
-				"demons from Hell,\n"
-				"but we've seen\n"
-				"better. Find out\n"
-				"more by visiting:\n"
-				"\n"
-				"doomrpg.com/spire\n"
-				, sizeof(*doomCanvas->epilogueText));
-		}
-		else {
-			strncpy(rank, "Chump", sizeof(rank));
-			strncpy(doomCanvas->epilogueText[1],
-				"You've finished\n"
-				"the game, barely.\n"
-				"There's still much\n"
-				"to discover. For a\n"
-				"little inspiration\n"
-				"to do better next\n"
-				"time, visit:\n"
-				"\n"
-				"doomrpg.com/hound\n"
-				, sizeof(*doomCanvas->epilogueText));
-		}
-
-		SDL_snprintf(doomCanvas->epilogueText[0], sizeof(*doomCanvas->epilogueText),
-			"Congratulations!\n"
-			"You've shut down\n"
-			"the portal to\n"
-			"Hell and stopped\n"
-			"the demonic inv-\n"
-			"asion.\n"
-			"\n"
-			"Rank: %s", rank);
-
-		DoomRPG_createImage(doomCanvas->doomRpg, "c.bmp", false, &doomCanvas->imgSpaceBG);
+		strncpy(rank, doomCanvas->doomRpg->sysStrings[STRING_RANKC], sizeof(rank)); //STRING_RANKC
+		strncpy(doomCanvas->epilogueText[1],
+			doomCanvas->doomRpg->sysStrings[STRING_YFS] //STRING_YFS
+			, sizeof(*doomCanvas->epilogueText));
 	}
+
+	SDL_snprintf(doomCanvas->epilogueText[0], sizeof(*doomCanvas->epilogueText),
+		doomCanvas->doomRpg->sysStrings[STRING_CSN]//STRING_CSN
+		, rank);
+
+	DoomRPG_createImage(doomCanvas->doomRpg, "c.bmp", false, &doomCanvas->imgSpaceBG);
 
 	Sound_playSound(doomCanvas->doomRpg->sound, 5039, SND_FLG_LOOP | SND_FLG_STOPSOUNDS | SND_FLG_ISMUSIC, 5);
 	doomCanvas->epilogueTextTime = -1;
 }
-
-static char storyTextA[] = "You have been\ndispatched in re - \nsponse to a dis - \ntress call from\nUnion Aerospace\nCorporation's re-\nsearch facility\non Mars. The base\nis under attack";
-static char storyTextB[] = "by an unknown\nforce and your\nmission is to ac-\nquire intelli-\ngence and neu-\ntralize the\nthreat.";
-static char storyTextC[] = "Insertion com-\nplete. For fur-\nther instruc-\ntions, rendezvous\nwith the other\nMarines at Junc-\ntion. Expect\nheavy resistance.\nGood luck!";
 
 static char storyTextA_ru[] = "Вас послали по\nсигналу бедствия\nпосланного иссле-\nдовательской\nбазой Объединён-\nной Аэрокосмичес-\nкой Корпорацией\nна Марсе. База\nнаходится нод\nатакой";
 static char storyTextB_ru[] = "неизвестных сил,\nи ваша миссия -\nразведать и нейт-\nрализовать угрозу";
@@ -2379,45 +2212,31 @@ void DoomCanvas_loadPrologueText(DoomCanvas_t* doomCanvas)
 	int textLen;
 	DoomRPG_setColor(doomCanvas->doomRpg, 0x000000);
 	DoomRPG_fillRect(doomCanvas->doomRpg, 0, 0, doomCanvas->displayRect.w, doomCanvas->displayRect.h);
-	u64 LanguageCode=0;
-	setInitialize();
-	setGetSystemLanguage(&LanguageCode);
-	if (strstr((char*)&LanguageCode, "ru")) {
-		DoomCanvas_drawString1(doomCanvas, "Загрузка...", doomCanvas->SCR_CX, doomCanvas->SCR_CY, 17);
+	DoomCanvas_drawString1(doomCanvas, doomCanvas->doomRpg->sysStrings[STRING_LOADING], doomCanvas->SCR_CX, doomCanvas->SCR_CY, 17);
 
-		DoomRPG_flushGraphics(doomCanvas->doomRpg);
-		Sound_playSound(doomCanvas->doomRpg->sound, 5039, SND_FLG_LOOP | SND_FLG_STOPSOUNDS | SND_FLG_ISMUSIC, 5);
+	DoomRPG_flushGraphics(doomCanvas->doomRpg);
+	Sound_playSound(doomCanvas->doomRpg->sound, 5039, SND_FLG_LOOP | SND_FLG_STOPSOUNDS | SND_FLG_ISMUSIC, 5);
 
-		textLen = SDL_strlen(storyTextA_ru);
-		doomCanvas->storyText1[0] = SDL_calloc(textLen + 1, sizeof(char));
-		strncpy(doomCanvas->storyText1[0], storyTextA_ru, textLen);
+	textLen = SDL_strlen(doomCanvas->doomRpg->sysStrings[STRING_STORYA]);
+	doomCanvas->storyText1[0] = SDL_calloc(textLen + 1, sizeof(char));
+	strncpy(doomCanvas->storyText1[0], doomCanvas->doomRpg->sysStrings[STRING_STORYA], textLen);
 
-		textLen = SDL_strlen(storyTextB_ru);
-		doomCanvas->storyText1[1] = SDL_calloc(textLen + 1, sizeof(char));
-		strncpy(doomCanvas->storyText1[1], storyTextB_ru, textLen);
+	textLen = SDL_strlen(doomCanvas->doomRpg->sysStrings[STRING_STORYB]);
+	doomCanvas->storyText1[1] = SDL_calloc(textLen + 1, sizeof(char));
+	strncpy(doomCanvas->storyText1[1], doomCanvas->doomRpg->sysStrings[STRING_STORYB], textLen);
 
-		textLen = SDL_strlen(storyTextC_ru);
-		doomCanvas->storyText2 = SDL_calloc(textLen + 1, sizeof(char));
-		strncpy(doomCanvas->storyText2, storyTextC_ru, textLen);
-		DoomRPG_createImage(doomCanvas->doomRpg, "e_ru.bmp", true, &doomCanvas->imgPlanetLayer);
+	textLen = SDL_strlen(doomCanvas->doomRpg->sysStrings[STRING_STORYC]);
+	doomCanvas->storyText2 = SDL_calloc(textLen + 1, sizeof(char));
+	strncpy(doomCanvas->storyText2, doomCanvas->doomRpg->sysStrings[STRING_STORYC], textLen);
+
+	const char* base_path = "/switch/DoomRPG/";
+	char full_path[128];
+	snprintf(full_path, sizeof(full_path), "%s%s/%s", base_path, doomCanvas->doomRpg->lang, "e.bmp");
+	if (file_exists(full_path)) {
+		snprintf(full_path, sizeof(full_path), "%s/%s", doomCanvas->doomRpg->lang, "e.bmp");
+		DoomRPG_createImage(doomCanvas->doomRpg, full_path, true, &doomCanvas->imgPlanetLayer); //planet layer
 	}
-	else {
-		DoomCanvas_drawString1(doomCanvas, "Loading...", doomCanvas->SCR_CX, doomCanvas->SCR_CY, 17);
-
-		DoomRPG_flushGraphics(doomCanvas->doomRpg);
-		Sound_playSound(doomCanvas->doomRpg->sound, 5039, SND_FLG_LOOP | SND_FLG_STOPSOUNDS | SND_FLG_ISMUSIC, 5);
-
-		textLen = SDL_strlen(storyTextA);
-		doomCanvas->storyText1[0] = SDL_calloc(textLen + 1, sizeof(char));
-		strncpy(doomCanvas->storyText1[0], storyTextA, textLen);
-
-		textLen = SDL_strlen(storyTextB);
-		doomCanvas->storyText1[1] = SDL_calloc(textLen + 1, sizeof(char));
-		strncpy(doomCanvas->storyText1[1], storyTextB, textLen);
-
-		textLen = SDL_strlen(storyTextC);
-		doomCanvas->storyText2 = SDL_calloc(textLen + 1, sizeof(char));
-		strncpy(doomCanvas->storyText2, storyTextC, textLen);
+	else{
 		DoomRPG_createImage(doomCanvas->doomRpg, "e.bmp", true, &doomCanvas->imgPlanetLayer);
 	}
 
@@ -2481,34 +2300,16 @@ boolean DoomCanvas_loadMedia(DoomCanvas_t* doomCanvas)
 	{
 		DoomRPG_setColor(doomCanvas->doomRpg, doomCanvas->render->introColor);
 		DoomRPG_fillRect(doomCanvas->doomRpg, 0, 0, doomCanvas->displayRect.w, doomCanvas->displayRect.h);
-		u64 LanguageCode=0;
-		setInitialize();
-		setGetSystemLanguage(&LanguageCode);
-		if (strstr((char*)&LanguageCode, "ru")) {
-			DoomCanvas_drawString1(doomCanvas, "Загрузка...", doomCanvas->SCR_CX, doomCanvas->SCR_CY - 48, 17);
-			DoomCanvas_drawString2(doomCanvas, doomCanvas->render->mapName, doomCanvas->SCR_CX, doomCanvas->SCR_CY - 36, 17, -1);
-			doomCanvas->fillRectIndex = 0;
-			//DoomCanvas_updateLoadingBar(doomCanvas);
+		DoomCanvas_drawString1(doomCanvas, doomCanvas->doomRpg->sysStrings[STRING_LOADING], doomCanvas->SCR_CX, doomCanvas->SCR_CY - 48, 17);
+		DoomCanvas_drawString2(doomCanvas, doomCanvas->render->mapName, doomCanvas->SCR_CX, doomCanvas->SCR_CY - 36, 17, -1);
+		doomCanvas->fillRectIndex = 0;
+		//DoomCanvas_updateLoadingBar(doomCanvas);
 
-			if (doomCanvas->game->isSaved) {
-				DoomCanvas_drawString1(doomCanvas, "Игра сохранена", doomCanvas->SCR_CX, doomCanvas->displayRect.h, 18);
-			}
-			else {
-				DoomCanvas_drawString1(doomCanvas, "Игра загружена", doomCanvas->SCR_CX, doomCanvas->displayRect.h, 18);
-			}
+		if (doomCanvas->game->isSaved) {
+			DoomCanvas_drawString1(doomCanvas, doomCanvas->doomRpg->sysStrings[STRING_GSS], doomCanvas->SCR_CX, doomCanvas->displayRect.h, 18); //STRING_GSS
 		}
 		else {
-			DoomCanvas_drawString1(doomCanvas, "Loading", doomCanvas->SCR_CX, doomCanvas->SCR_CY - 48, 17);
-			DoomCanvas_drawString2(doomCanvas, doomCanvas->render->mapName, doomCanvas->SCR_CX, doomCanvas->SCR_CY - 36, 17, -1);
-			doomCanvas->fillRectIndex = 0;
-			//DoomCanvas_updateLoadingBar(doomCanvas);
-
-			if (doomCanvas->game->isSaved) {
-				DoomCanvas_drawString1(doomCanvas, "Game Saved", doomCanvas->SCR_CX, doomCanvas->displayRect.h, 18);
-			}
-			else {
-				DoomCanvas_drawString1(doomCanvas, "Game Loaded", doomCanvas->SCR_CX, doomCanvas->displayRect.h, 18);
-			}
+			DoomCanvas_drawString1(doomCanvas, doomCanvas->doomRpg->sysStrings[STRING_GLS], doomCanvas->SCR_CX, doomCanvas->displayRect.h, 18); //STRING_GLS
 		}
 
 		DoomRPG_flushGraphics(doomCanvas->doomRpg);
@@ -3056,7 +2857,7 @@ void DoomCanvas_run(DoomCanvas_t* doomCanvas)
 			}
 			else {
 				Game_loadState(doomCanvas->doomRpg->game, doomCanvas->loadType);
-				Hud_addMessage(doomCanvas->doomRpg->hud, "Game Loaded");
+				Hud_addMessage(doomCanvas->doomRpg->hud, doomCanvas->doomRpg->sysStrings[STRING_GLS]);
 				doomCanvas->loadType = 0;
 			}
 			break;
@@ -3072,26 +2873,12 @@ void DoomCanvas_run(DoomCanvas_t* doomCanvas)
 
 			if (doomCanvas->passwordTime != 0 && doomCanvas->time > doomCanvas->passwordTime) {
 				DoomCanvas_closeDialog(doomCanvas);
-				u64 LanguageCode=0;
-				setInitialize();
-				setGetSystemLanguage(&LanguageCode);
-				if (strstr((char*)&LanguageCode, "ru")) {
-					if (SDL_strcmp(doomCanvas->passCode, doomCanvas->game->passCode) == 0) {
-						Hud_addMessageForce(doomCanvas->hud, "Верный пароль!", true);
-						Game_runEvent(doomCanvas->game, doomCanvas->game->tileEvent, doomCanvas->game->tileEventIndex + 1, doomCanvas->game->tileEventFlags);
-					}
-					else if (doomCanvas->passCode[0] != '\0') {
-						Hud_addMessageForce(doomCanvas->hud, "Пароль неверный!", true);
-					}
+				if (SDL_strcmp(doomCanvas->passCode, doomCanvas->game->passCode) == 0) {
+					Hud_addMessageForce(doomCanvas->hud, doomCanvas->doomRpg->sysStrings[STRING_CORRECT], true); //STRING_CORRECT
+					Game_runEvent(doomCanvas->game, doomCanvas->game->tileEvent, doomCanvas->game->tileEventIndex + 1, doomCanvas->game->tileEventFlags);
 				}
-				else {
-					if (SDL_strcmp(doomCanvas->passCode, doomCanvas->game->passCode) == 0) {
-						Hud_addMessageForce(doomCanvas->hud, "Correct code!", true);
-						Game_runEvent(doomCanvas->game, doomCanvas->game->tileEvent, doomCanvas->game->tileEventIndex + 1, doomCanvas->game->tileEventFlags);
-					}
-					else if (doomCanvas->passCode[0] != '\0') {
-						Hud_addMessageForce(doomCanvas->hud, "Invalid code!", true);
-					}
+				else if (doomCanvas->passCode[0] != '\0') {
+					Hud_addMessageForce(doomCanvas->hud, doomCanvas->doomRpg->sysStrings[STRING_INVALID], true);
 				}
 			}
 
@@ -3157,40 +2944,19 @@ void DoomCanvas_run(DoomCanvas_t* doomCanvas)
 		}
 
 		case ST_SAVING: {
-			u64 LanguageCode=0;
-			setInitialize();
-			setGetSystemLanguage(&LanguageCode);
-			if (strstr((char*)&LanguageCode, "ru")) {
-				if (doomCanvas->saveType & 4) {
-					Game_saveState(doomCanvas->doomRpg->game, MAP_JUNCTION, (51 * 32), (41 * 32), 0, false);
-					Hud_addMessage(doomCanvas->doomRpg->hud, "Игра сохранена");
-				}
-				else {
-					int v14 = (doomCanvas->saveType & 2) == 0;
-					if ((doomCanvas->saveType & 2) == 0)
-						v14 = (doomCanvas->saveType & 1) == 0;
-					if (!v14) {
-						Game_saveState(doomCanvas->doomRpg->game, doomCanvas->loadMapID, doomCanvas->destX, doomCanvas->destY, doomCanvas->destAngle, (doomCanvas->saveType & 2));
-						Hud_addMessage(doomCanvas->doomRpg->hud, "Игра сохранена");
-					}
-
-				}
+			if (doomCanvas->saveType & 4) {
+				Game_saveState(doomCanvas->doomRpg->game, MAP_JUNCTION, (51 * 32), (41 * 32), 0, false);
+				Hud_addMessage(doomCanvas->doomRpg->hud, doomCanvas->doomRpg->sysStrings[STRING_GSS]);
 			}
 			else {
-				if (doomCanvas->saveType & 4) {
-					Game_saveState(doomCanvas->doomRpg->game, MAP_JUNCTION, (51 * 32), (41 * 32), 0, false);
-					Hud_addMessage(doomCanvas->doomRpg->hud, "Game Saved");
+				int v14 = (doomCanvas->saveType & 2) == 0;
+				if ((doomCanvas->saveType & 2) == 0)
+					v14 = (doomCanvas->saveType & 1) == 0;
+				if (!v14) {
+					Game_saveState(doomCanvas->doomRpg->game, doomCanvas->loadMapID, doomCanvas->destX, doomCanvas->destY, doomCanvas->destAngle, (doomCanvas->saveType & 2));
+					Hud_addMessage(doomCanvas->doomRpg->hud, doomCanvas->doomRpg->sysStrings[STRING_GSS]);
 				}
-				else {
-					int v14 = (doomCanvas->saveType & 2) == 0;
-					if ((doomCanvas->saveType & 2) == 0)
-						v14 = (doomCanvas->saveType & 1) == 0;
-					if (!v14) {
-						Game_saveState(doomCanvas->doomRpg->game, doomCanvas->loadMapID, doomCanvas->destX, doomCanvas->destY, doomCanvas->destAngle, (doomCanvas->saveType & 2));
-						Hud_addMessage(doomCanvas->doomRpg->hud, "Game Saved");
-					}
 
-				}
 			}
 			if (doomCanvas->saveType & 8) {
 				DoomCanvas_setupmenu(doomCanvas, 0);
@@ -3390,21 +3156,21 @@ void DoomCanvas_setState(DoomCanvas_t* doomCanvas, int stateNum)
 		DoomRPG_setColor(doomCanvas->doomRpg, 0x000000);
 		DoomRPG_fillRect(doomCanvas->doomRpg, 0, 0, doomCanvas->clipRect.w, doomCanvas->softKeyY);
 
-		len = SDL_strlen(justAMoment);
+		len = SDL_strlen(doomCanvas->doomRpg->sysStrings[STRING_JAM]);
 		width = ((len * 7) + 10);
 
 		DoomRPG_setColor(doomCanvas->doomRpg, 0xffffff);
 		DoomRPG_drawRect(doomCanvas->doomRpg, doomCanvas->SCR_CX - (width >> 1), doomCanvas->SCR_CY - 24, width, 48);
 
 		if (doomCanvas->printMsg[0] == '\0') {
-			msg = processing;
+			msg = doomCanvas->doomRpg->sysStrings[STRING_PROCESSING]; //STRING_PROCESSING
 		}
 		else {
 			msg = doomCanvas->printMsg;
 		}
 
 		DoomCanvas_drawString1(doomCanvas, msg, doomCanvas->SCR_CX, doomCanvas->SCR_CY -12, 0x11);
-		DoomCanvas_drawString1(doomCanvas, justAMoment, doomCanvas->SCR_CX, doomCanvas->SCR_CY, 0x11);
+		DoomCanvas_drawString1(doomCanvas, doomCanvas->doomRpg->sysStrings[STRING_JAM], doomCanvas->SCR_CX, doomCanvas->SCR_CY, 0x11);
 		DoomCanvas_drawSoftKeys(doomCanvas, NULL, NULL);
 
 		DoomRPG_flushGraphics(doomCanvas->doomRpg);
@@ -3686,8 +3452,24 @@ void DoomCanvas_startup(DoomCanvas_t* doomCanvas)
 	doomCanvas->sndFXOnly = false;
 
 	DoomRPG_createImage(doomCanvas->doomRpg, "g.bmp", false, &doomCanvas->imgLegals);
-	DoomRPG_createImage(doomCanvas->doomRpg, "a.bmp", true, &doomCanvas->imgFont);
-	DoomRPG_createImage(doomCanvas->doomRpg, "larger_font.bmp", true, &doomCanvas->imgLargerFont);
+	const char* base_path = "/switch/DoomRPG/";
+	char full_path[128];
+	snprintf(full_path, sizeof(full_path), "%s%s/%s", base_path, doomRpg->lang, "a.bmp");
+	if (file_exists(full_path)) {
+		snprintf(full_path, sizeof(full_path), "%s/%s", doomRpg->lang, "a.bmp");
+		DoomRPG_createImage(doomCanvas->doomRpg, full_path, true, &doomCanvas->imgFont); //mini-font
+	}
+	else{
+		DoomRPG_createImage(doomCanvas->doomRpg, "a.bmp", true, &doomCanvas->imgFont); //mini-font
+	}
+	snprintf(full_path, sizeof(full_path), "%s%s/%s", base_path, doomRpg->lang, "larger_font.bmp");
+	if (file_exists(full_path)){
+		snprintf(full_path, sizeof(full_path), "%s/%s", doomRpg->lang, "larger_font.bmp");
+		DoomRPG_createImage(doomCanvas->doomRpg, full_path, true, &doomCanvas->imgLargerFont); //big-font
+	}
+	else{
+		DoomRPG_createImage(doomCanvas->doomRpg, "larger_font.bmp", true, &doomCanvas->imgLargerFont); //big font
+	}
 	DoomRPG_createImage(doomCanvas->doomRpg, "b.bmp", true, &doomCanvas->imgMapCursor);
 }
 
@@ -3872,7 +3654,7 @@ boolean DoomCanvas_updatePlayerAnimDoors(DoomCanvas_t* doomCanvas)
 	}
 
 	if (foundSecret) {
-		Hud_addMessage(doomCanvas->hud, "Found Secret!");
+		Hud_addMessage(doomCanvas->hud, doomCanvas->doomRpg->sysStrings[STRING_FOUNDSEC]); //STRING_FOUNDSEC
 		Player_addXP(doomCanvas->player, 5);
 		Sound_playSound(doomCanvas->doomRpg->sound, 5133, 0, 3);
 	}

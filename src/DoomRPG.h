@@ -3,9 +3,10 @@
 
 #ifndef __BYTEBOOL__
 #define __BYTEBOOL__
+#ifdef __aarch64__
 #include <switch/types.h>
 #include <switch/runtime/pad.h>
-
+#endif
 typedef enum { false_f, true_t } boolean;
 typedef unsigned char byte;
 #endif
@@ -252,7 +253,210 @@ typedef struct DoomRPG_s
 	char			errorStr[64];
 	boolean			closeApplet;
 	int				imageMemory;
+	char*			lang;
+	unsigned char** sysStrings;
 } DoomRPG_t;
+
+typedef enum
+{
+	STRING_LOADING=0,  //Loading...
+	STRING_SAVING, //Saving...
+	STRING_TOOKDAMAGEDIED, //%s took %d damage! %s died!
+	STRING_TOOKDAMAGE, //%s took %d damage!
+	STRING_FIRECLEARED, //Fire cleared!
+	STRING_TRAPPED, //Trapped!
+	STRING_DOORCLEARED, //Door cleared!
+	STRING_CASTSRAISE, //%s casts raise%c
+	STRING_ATTACKS, //%s attacks%c
+	STRING_DODGED, //Dodged!
+	STRING_GAINEDARMOR, //Gained %d armor
+	STRING_GAINEDHEALTH, //Gained %d health
+	STRING_LEVELUP, //Level up!
+	STRING_N, //|
+	STRING_CURLEVEL, //Level: %d|
+	STRING_MAXHEALTH, //Max Health: +%d|
+	STRING_MAXARMOR, //Max Armor: +%d|
+	STRING_MAXDEFENSE, //Defense: +%d|
+	STRING_MAXSTRENGTH, //Strength: +%d|
+	STRING_MAXAGILITY, //Agility: +%d|
+	STRING_MAXACCURACY, //Accuracy: +%d|
+	STRING_HEALTHRESTORED, //|Health restored.
+	STRING_GAINEDXP, //Gained %d XP!
+	STRING_BERSERKEREXPIRED, //Berserker expired!
+	STRING_NOAMMO, //Not enough ammo!
+	STRING_CRIT, //Crit!
+	STRING_DOGTOOK, //Dog took
+	STRING_DAMAGE, // damage!
+	STRING_DOGDIED, // Dog died!
+	STRING_NEARDEATH, //Near Death!
+	STRING_LOWHEALTH, //Low Health!
+	STRING_ARMORGONE, //Armor Gone!
+	STRING_INSUHEALTH, //Insufficient health!
+	STRING_INSUARMOR, //Insufficient armor!
+	STRING_INSUFUNDS, //Insufficient funds!
+	STRING_INSUXP, //Insufficient XP!
+	STRING_NODOGRANGE, //No dog within range
+	STRING_BADTARGET, //Bad target for Dog Collar
+	STRING_WONTFIT, //Dog Collar won't fit %s%c
+	STRING_BERSERKERACITVE, //Berserker activated!
+	STRING_REVIVED, //%s is revived!
+	STRING_RAISEF, //Raise failed!
+	STRING_ATTACKING, //Attacking%c %s
+	STRING_LASTSHOT, //(Last shot!)
+	STRING_ONESHOT, //(1 shot left!)
+	STRING_TWOSHOTS, //(2 shots left!)
+	STRING_THREESHOTS, //(3 shots left!)
+	STRING_KRONOSTELEP, //Kronos Teleported!
+	STRING_MISSED, //Missed!
+	STRING_NOEFFECT, //No effect!
+	STRING_EMPTY, //
+	STRING_DAMAGE2, //%s%d damage!
+	STRING_DIED, // %s died!
+	STRING_HITFORDAM, //Hit %s for %d damage!
+	STRING_DESTROYED, //%s destroyed!
+	STRING_MAXCREDITS, //Credits at maximum
+	STRING_ARMORATMAX, //Armor at maximum
+	STRING_HEALTHATMAX, //Health at maximum
+	STRING_GOT, //Got %s
+	STRING_CANTHOLDMORE, //Can't hold more %ss
+	STRING_GOTAXE, //You got the Axe!|Zombies beware...
+	STRING_GOTFIRE, //You got the Fire|Extinguisher! It|uses halon can-|isters to put out|fires.
+	STRING_GOTSHOT, //You got the|Shotgun!
+	STRING_GETCHAIN, //You got the|Chaingun! Precise|and deadly, but|it's an ammo hog.
+	STRING_GETSUPSHOT, //You got the Super|Shotgun! Fierce!
+	STRING_GOTROCKET, //You got the|Rocket Launcher!|w00t!
+	STRING_GOTPLASMA, //You got the|Plasma Gun!
+	STRING_GOTBFG, //You got the BFG!|We could tell you|what BFG stands|for, but this is|a family game.
+	STRING_BURNS, //It burns!
+	STRING_REALBURNS, //It really burns!!
+	STRING_NOTES, //%s notes...
+	STRING_BACK, //Back
+	STRING_ITEMS, //ITEMS
+	STRING_SMMED, //Sm Medkit
+	STRING_LGMED, //Lg Medkit
+	STRING_SPHERE, //Soul Sphere
+	STRING_BERSERK, //Berserker
+	STRING_AMMO, //AMMO
+	STRING_CANS, //10x Hal. Cans
+	STRING_BULLETS, //10x Bullets
+	STRING_SHELLS, //10x Shells
+	STRING_CELLS, //10x Cells
+	STRING_ROCKETS, //3x Rockets
+	STRING_STATS, //STATS
+	STRING_PACC, //+1 Accuracy
+	STRING_PAGI, //+1 Agility
+	STRING_PSTR, //+1 Strength
+	STRING_PDEF, //+1 Defense
+	STRING_YES, //Yes
+	STRING_NO, //No
+	STRING_PLAYER, //PLAYER
+	STRING_HEALTH, //Health:
+	STRING_ARMOR, //Armor:
+	STRING_CREDITS, //Credits:
+	STRING_LEVEL, //Level:
+	STRING_XP, //XP:
+	STRING_STARTGAME, //Start Game
+	STRING_OPTIONS, //Options
+	STRING_HELP, //Help/About
+	STRING_EXIT, //Exit
+	STRING_ISEXIT, //Exit Doom RPG?
+    STRING_ERASE, //Erase saved game?
+	STRING_AREYOUSURE, //Are you sure?
+	STRING_CONTINUE, //Continue
+	STRING_NEWGAME, //New Game
+	STRING_VIDEO, //Video
+	STRING_INPUT, //Input
+	STRING_SOUND, //Sound
+	STRING_SOUNDON, //Enable sounds?
+	STRING_COMPLETED, //Completed!
+	STRING_PRESSOKTO, //Press OK to
+	STRING_PRESSCONT, //continue
+	STRING_GOTOJ, //Go To Junction
+	STRING_MAINMENU, //Main Menu
+	STRING_QUITTOMAIN, //Quit to Main Menu?
+	STRING_QUIT, //Quit
+	STRING_CANCEL, //Cancel
+	STRING_NOTEBOOK, //Notebook
+	STRING_RESUME, //Resume Game
+	STRING_INVENTORY, //Inventory
+	STRING_SAVEGAME, //Save Game
+	STRING_LOADGAME, //Load Game
+	STRING_AUTOMAP, //Automap
+	STRING_STATUS, //Status
+	STRING_NOSAVE, //Don't Save
+	STRING_WEAPONS, //WEAPONS
+	STRING_OTHER, //OTHER
+	STRING_GKEY, //Green Key
+	STRING_YKEY, //Yellow Key
+	STRING_BKEY, //Blue Key
+	STRING_RKEY, //Red Key
+	STRING_CONFIRMUSE, //Use %s?
+	STRING_HFULL, //Health full.
+	STRING_HANDA, //Health and armor
+	STRING_FULL, //full.
+	STRING_TRYAGAIN, //Try again?
+	STRING_RETRY, //Retry Sector
+	STRING_TWT, //This will take
+	STRING_YTJ, //you to Junction
+	STRING_BT2, //before the 2nd
+	STRING_IAS, //invasion. Are
+	STRING_USQ, //you sure?
+	STRING_WYL, //Would you like
+	STRING_TMA, //to make a pur-
+	STRING_CSS, //chase?
+	STRING_NEC, //You do not have
+	STRING_ECS, //enough credits!
+	STRING_YHT, //You have too
+	STRING_MAS, //many already!
+	STRING_BUY, //Buy %s?
+	STRING_LGS, //Load Game?
+	STRING_NSG, //No Saved Game
+	STRING_MORE, //More
+	STRING_NTU, //Nothing to use
+	STRING_TPS, //Turn passed.
+	STRING_RANKM, //Master
+	STRING_YHF, //You have found\nevery secret and\nkilled every mon-\nster in the game.\nThis calls for a\ncelebration!\nPlease visit:\n\ndoomrpg.com/sarge\n
+	STRING_RANKB, //Baddy
+	STRING_NJT, //Nice job. There\nis only a little\nmore you need to\ndo to achieve\nMaster rank. We\nhave a parade\nfor you at:\n\ndoomrpg.com/blues\n
+	STRING_RANKA, //Average
+	STRING_YBT, //You've beaten the\ndemons from Hell,\nbut we've seen\nbetter. Find out\nmore by visiting:\n\ndoomrpg.com/spire\n
+	STRING_RANKC, //Chump
+	STRING_YFS, //You've finished\nthe game, barely.\nThere's still much\nto discover. For a\nlittle inspiration\nto do better next\ntime, visit:\n\ndoomrpg.com/hound\n
+	STRING_CSN, //Congratulations!\nYou've shut down\nthe portal to\nHell and stopped\nthe demonic inv-\nasion.\n\nRank: %s
+	STRING_STORYA, //You have been\ndispatched in re - \nsponse to a dis - \ntress call from\nUnion Aerospace\nCorporation's re-\nsearch facility\non Mars. The base\nis under attack
+	STRING_STORYB, //by an unknown\nforce and your\nmission is to ac-\nquire intelli-\ngence and neu-\ntralize the\nthreat.
+	STRING_STORYC, //Insertion com-\nplete. For fur-\nther instruc-\ntions, rendezvous\nwith the other\nMarines at Junc-\ntion. Expect\nheavy resistance.\nGood luck!
+	STRING_GSS, //Game Saved
+	STRING_GLS, //Game Loaded
+	STRING_CORRECT, //Correct code!
+	STRING_INVALID, //Invalid code!
+	STRING_PROCESSING, //Processing...
+	STRING_JAM, //(Just a moment!)
+	STRING_YOUCAPT, //You captured|the %s!|
+	STRING_SORRY, //Sorry!
+	STRING_FOUNDSEC, //Found Secret!
+	STRING_DEFENSE, //Defense:
+	STRING_STRENGTH, //Strength:
+	STRING_AGIL, //Agility:
+	STRING_ACCUR, //Accuracy:
+	STRING_THISSEC, //THIS SECTOR
+	STRING_TIME, //Time:
+	STRING_SECRETS, //Secrets:
+	STRING_MONSTERS, //Monsters:
+	STRING_MOVES, //Moves:
+	STRING_XPG, //XP Gained:
+	STRING_OVERA, //OVERALL
+	STRING_DEATHS, //Deaths:
+	STRING_HUNKILLS, //100% KILLS
+	STRING_NONE, //None
+	STRING_HUNSECRETS, //%c 100%% SECRETS %c
+	STRING_LOADINGJ, //Loading Junction
+	STRING_LOADINGSEC, //Loading Sector
+	STRING_E, //E
+	STRING_W, //W
+	STRING_S, //S
+	STRING_N2 //N
+} systemStrings;
 
 typedef struct Image_s
 {
@@ -333,5 +537,6 @@ int File_readByte(SDL_RWops* rw);
 int File_readShort(SDL_RWops* rw);
 int File_readInt(SDL_RWops* rw);
 int File_readLong(SDL_RWops* rw);
+bool file_exists(const char *path);
 
 #endif

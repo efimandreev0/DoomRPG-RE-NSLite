@@ -11,6 +11,7 @@
 #include "Player.h"
 #include "Render.h"
 #include "SDL_Video.h"
+#include "Z_Zip.h"
 
 #define FIXED_VERSION 1
 
@@ -407,6 +408,54 @@ boolean Render_beginLoadMap(Render_t* render, int mapNameID)
 	return false;
 }
 
+void LoadMapStringsFromTxt(Render_t *render, const char *path)
+{
+	FILE *f = fopen(path, "r");
+	if (!f) {
+		SDL_Log("Cannot open %s", path);
+		return;
+	}
+
+	SDL_free(render->mapStringsIDs);
+	render->mapStringsIDs = NULL;
+	render->mapStringCount = 0;
+
+	size_t capacity = 0;
+	char line[1024];
+	while (fgets(line, sizeof(line), f)) {
+		capacity++;
+	}
+	rewind(f);
+
+	render->mapStringsIDs = SDL_malloc(capacity * sizeof(char*));
+	if (!render->mapStringsIDs) {
+		fclose(f);
+		return;
+	}
+
+	while (fgets(line, sizeof(line), f)) {
+
+		line[strcspn(line, "\r\n")] = '\0';
+
+		size_t len = strlen(line);
+		char *dst = SDL_calloc(len + 1, sizeof(char));
+		if (!dst) break;
+
+		strcpy(dst, line);
+		render->mapStringsIDs[render->mapStringCount++] = dst;
+	}
+
+	fclose(f);
+}
+#include <sys/stat.h>
+#include <stdbool.h>
+
+bool folder_exists(const char *path)
+{
+	struct stat st;
+	return (stat(path, &st) == 0) && S_ISDIR(st.st_mode);
+}
+
 boolean Render_beginLoadMapData(Render_t* render)
 {
 	short* mediaPlanes;
@@ -702,6 +751,71 @@ boolean Render_beginLoadMapData(Render_t* render)
 			strncpy(render->mapStringsIDs[render->mapStringCount], &ioBuffer[render->ioBufferPos], strSize);
 			render->ioBufferPos += strSize;
 			render->mapStringCount++;
+		}
+#ifdef __aarch64__
+		const char* base_path = "/switch/DoomRPG/";
+#endif
+		char full_path[128];
+		snprintf(full_path, sizeof(full_path), "%s%s", base_path, render->doomRpg->lang);
+		if (!folder_exists(full_path)) {
+			snprintf(full_path, sizeof(full_path), "%s%s", base_path, "en");
+		}
+		if (folder_exists((full_path))){
+			switch (render->mapNameID) {
+				case MAP_INTRO:
+					snprintf(full_path + strlen(full_path),
+				 sizeof(full_path) - strlen(full_path),
+				 "/%s", "intro.txt");
+					break;
+				case MAP_SECTOR01:
+					snprintf(full_path + strlen(full_path),
+				 sizeof(full_path) - strlen(full_path),
+				 "/%s", "level01.txt");
+					break;
+				case MAP_SECTOR02:
+				snprintf(full_path + strlen(full_path),
+				 sizeof(full_path) - strlen(full_path),
+				 "/%s", "level02.txt");
+					break;
+				case MAP_SECTOR03:
+				snprintf(full_path + strlen(full_path),
+				 sizeof(full_path) - strlen(full_path),
+				 "/%s", "level03.txt");
+					break;
+				case MAP_SECTOR04:
+					snprintf(full_path + strlen(full_path),
+				 sizeof(full_path) - strlen(full_path),
+				 "/%s", "level04.txt");
+					break;
+				case MAP_SECTOR05:
+					snprintf(full_path + strlen(full_path),
+				 sizeof(full_path) - strlen(full_path),
+				 "/%s", "level05.txt");
+					break;
+				case MAP_SECTOR06:
+					snprintf(full_path + strlen(full_path),
+				 sizeof(full_path) - strlen(full_path),
+				 "/%s", "level06.txt");
+					break;
+				case MAP_SECTOR07:
+					snprintf(full_path + strlen(full_path),
+				 sizeof(full_path) - strlen(full_path),
+				 "/%s", "level07.txt");
+					break;
+				case MAP_JUNCTION:
+				snprintf(full_path + strlen(full_path),
+				 sizeof(full_path) - strlen(full_path),
+				 "/%s", "junction.txt");
+					break;
+				case MAP_JUNCTION_DESTROYED:
+				snprintf(full_path + strlen(full_path),
+				 sizeof(full_path) - strlen(full_path),
+				 "/%s", "junction_destroyed.txt");
+					break;
+				default:
+					break;
+			}
+			LoadMapStringsFromTxt(render, full_path);
 		}
 	}
 

@@ -7,6 +7,7 @@
 #include "DoomRPG.h"
 
 #include <switch/services/hid.h>
+#include <switch/services/set.h>
 
 #include "DoomCanvas.h"
 #include "Render.h"
@@ -527,6 +528,117 @@ void DoomRPG_setBind(DoomRPG_t* doomrpg, int mouse_Button, const Uint8* state) {
 	}
 }
 
+char* GetLang() {
+	#ifdef __aarch64__
+	u64 LanguageCode=0;
+	setInitialize();
+	setGetSystemLanguage(&LanguageCode);
+	setExit();
+	if (strstr((char*)&LanguageCode, "ja")) {
+		return "jp";
+	}
+	else if (strstr((char*)&LanguageCode, "enus")) {
+		return "en";
+	}
+	else if (strstr((char*)&LanguageCode, "fr")) {
+		return "fr";
+	}
+	else if (strstr((char*)&LanguageCode, "de")) {
+		return "de";
+	}
+	else if (strstr((char*)&LanguageCode, "it")) {
+		return "it";
+	}
+	else if (strstr((char*)&LanguageCode, "es")) {
+		return "es";
+	}
+	else if (strstr((char*)&LanguageCode, "zhcn")) {
+		return "zhcn";
+	}
+	else if (strstr((char*)&LanguageCode, "ko")) {
+		return "ko";
+	}
+	else if (strstr((char*)&LanguageCode, "nl")) {
+		return "du";
+	}
+	else if (strstr((char*)&LanguageCode, "pt")) {
+		return "pt";
+	}
+	else if (strstr((char*)&LanguageCode, "ru")) {
+		return "ru";
+	}
+	else if (strstr((char*)&LanguageCode, "zhtw")) {
+		return "zhtw";
+	}
+	else if (strstr((char*)&LanguageCode, "engb")) {
+		return "en";
+	}
+	else if (strstr((char*)&LanguageCode, "frca")) {
+		return "fr";
+	}
+	else if (strstr((char*)&LanguageCode, "es419")) {
+		return "en";
+	}
+	else if (strstr((char*)&LanguageCode, "ptbr")) {
+		return "ptbr";
+	}
+	else {
+		return "en";
+	}
+	#elif __vita__
+
+	#endif
+}
+unsigned char** readTxt(const char* path)
+{
+    FILE* f = fopen(path, "rb");
+    if (!f) return NULL;
+
+    unsigned char** lines = NULL;
+    size_t lineCount = 0;
+    unsigned char buf[4096];
+
+    while (fgets(buf, sizeof(buf), f)) {
+        buf[strcspn(buf, "\r\n")] = '\0';
+
+        char* src = buf;
+        char* tmp = malloc(strlen(buf) + 1);
+        if (!tmp) { fclose(f); return NULL; }
+
+        char* dst = tmp;
+        while (*src) {
+            if (src[0] == '\\' && src[1] == 'n') {
+                *dst++ = '\n';
+                src += 2;
+            } else {
+                *dst++ = *src++;
+            }
+        }
+        *dst = '\0';
+
+        unsigned char** t = realloc(lines, (lineCount + 2) * sizeof(unsigned char*));
+        if (!t) { free(tmp); fclose(f); return NULL; }
+        lines = t;
+        lines[lineCount++] = (unsigned char*)tmp;
+    }
+    fclose(f);
+
+    if (lines)
+        lines[lineCount] = NULL;
+
+    return lines;
+}
+
+bool file_exists(const char *path)
+{
+	FILE *f = fopen(path, "rb");
+	if (f) {
+		fclose(f);
+		return true;
+	}
+	return false;
+}
+
 int DoomRPG_Init(void) // 0x3141C
 {
 	int mem;
@@ -539,6 +651,14 @@ int DoomRPG_Init(void) // 0x3141C
 	doomRpg->upTimeMs = 0;
 	doomRpg->graphSetCliping = false;
 	doomRpg->closeApplet = false;
+	doomRpg->lang = GetLang();
+	const char* base_path = "/switch/DoomRPG/";
+	char full_path[128];
+	snprintf(full_path, sizeof(full_path), "%s%s/%s", base_path, doomRpg->lang, "system.txt");
+	if (!file_exists(full_path)) {
+		snprintf(full_path, sizeof(full_path), "%s%s", base_path, "en/system.txt");
+	}
+	doomRpg->sysStrings = readTxt(full_path);
 
 	// Port: set default Binds
 	DoomRPG_setDefaultBinds(doomRpg);
