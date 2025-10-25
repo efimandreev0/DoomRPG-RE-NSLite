@@ -68,7 +68,7 @@ void readEntityNames(EntityDefManager_t *entityDef, const char *txtName)
     char line[128];
     size_t i = 0;
     while (i < entityDef->numDefs && fgets(line, sizeof(line), fp)) {
-        line[strcspn(line, "\r\n")] = '\0';
+        line[strcspn(line, "\n")] = '\0';
 
         strncpy(entityDef->list[i].name, line, sizeof(entityDef->list[i].name) - 1);
         entityDef->list[i].name[sizeof(entityDef->list[i].name) - 1] = '\0';
