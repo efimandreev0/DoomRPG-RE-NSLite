@@ -271,6 +271,7 @@ typedef enum
 	STRING_DODGED, //Dodged!
 	STRING_GAINEDARMOR, //Gained %d armor
 	STRING_GAINEDHEALTH, //Gained %d health
+	STRING_GAINEDXP, //Gained %d XP!
 	STRING_LEVELUP, //Level up!
 	STRING_N, //|
 	STRING_CURLEVEL, //Level: %d|
@@ -281,7 +282,6 @@ typedef enum
 	STRING_MAXAGILITY, //Agility: +%d|
 	STRING_MAXACCURACY, //Accuracy: +%d|
 	STRING_HEALTHRESTORED, //|Health restored.
-	STRING_GAINEDXP, //Gained %d XP!
 	STRING_BERSERKEREXPIRED, //Berserker expired!
 	STRING_NOAMMO, //Not enough ammo!
 	STRING_CRIT, //Crit!
