@@ -43,6 +43,7 @@ This port uses SDL2 and SDL2_Mixer
 1. git clone https://github.com/efimandreev0/DoomRPG-RE-NSLite.git && cd DoomRPG-RE-NSLite
 1. mkdir build && cd build
 1. cmake .. -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/Switch.cmake
+1. make
 
 ## Bug reporting
 
