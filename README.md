@@ -8,8 +8,8 @@ This is a Nintendo Switch port of the [reverse engineered Doom RPG](https://gith
 2. Next, you need `BarToZip.exe` converter tool (Windows only) included in the [PC release](https://github.com/Erick194/DoomRPG-RE/releases/latest).
 3. Copy `doomrpg.bar` to a folder containing `BarToZip.exe`. Run `BarToZip.exe` to generate `DoomRPG.zip` file.
 4. Download the [latest NRO release](https://github.com/efimandreev0/DoomRPG-RE-NSLite/releases/latest) and extract this to `switch/`.
-5. Extract the newly generated `DoomRPG.zip` to `switch/doomrpg/`.
-6. Extract `datafiles.zip` from last Release to `switch/doomrpg/`.<br />
+5. Extract the newly generated `DoomRPG.zip` to `/switch/doomrpg/`.
+6. Extract `datafiles.zip` from last Release to `/switch/doomrpg/`.<br />
 Optional: You can install localizations from Release too.
 8. You can now start the game
 
@@ -32,11 +32,11 @@ Optional: You can install localizations from Release too.
 
 ## Save and config data
 
-All user data is stored in `switch/doomrpg/saves` - these files are compatible with the PC release.
+All user data is stored in `/switch/doomrpg/saves` - these files are compatible with the PC release.
 
 ## Building instructions
 
-This port uses SDL2, ZLIB, SoLoud and fluidsynth-lite
+This port uses SDL2 and SDL2_Mixer
 
 1. Install [Devkitpro] and Switch-dev package, also make sure `DEVKITPRO` env variable is set
 1. Install SDL2 and SDL2_Mixer by Pacman
