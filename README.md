@@ -44,8 +44,6 @@ This port uses SDL2, ZLIB, SoLoud and fluidsynth-lite
 1. mkdir build && cd build
 1. cmake .. -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/Switch.cmake
 
-Note: You must have VERY OLD vitaGL and SDL2. Without that your game don't start, and been crashing. I used "vdpm SDL2" and "vdpm vitagl".
-
 ## Bug reporting
 
 If you find a bug, please open an issue here on github.
