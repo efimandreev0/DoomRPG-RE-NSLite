@@ -1,4 +1,4 @@
-# DoomRPG-RE - PlayStation Vita port
+# DoomRPG-RE - Nintendo Switch port
 
 This is a Nintendo Switch port of the [reverse engineered Doom RPG](https://github.com/Erick194/DoomRPG-RE) by [GEC]. All credits go to the GEC team, this project would not exist without their hard work.
 
@@ -33,6 +33,18 @@ Optional: You can install localizations from Release too.
 ## Save and config data
 
 All user data is stored in `switch/doomrpg/saves` - these files are compatible with the PC release.
+
+## Building instructions
+
+This port uses SDL2, ZLIB, SoLoud and fluidsynth-lite
+
+1. Install [Devkitpro] and Switch-dev package, also make sure `DEVKITPRO` env variable is set
+1. Install SDL2 and SDL2_Mixer by Pacman
+1. git clone https://github.com/efimandreev0/DoomRPG-RE-NSLite.git && cd DoomRPG-RE-NSLite
+1. mkdir build && cd build
+1. cmake .. -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/Switch.cmake
+
+Note: You must have VERY OLD vitaGL and SDL2. Without that your game don't start, and been crashing. I used "vdpm SDL2" and "vdpm vitagl".
 
 ## Bug reporting
 
